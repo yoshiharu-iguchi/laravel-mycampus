@@ -1,4 +1,4 @@
-version: "3.9"
+
 services:
   app:
     build: ./infra/php
@@ -15,6 +15,12 @@ services:
   
   db:
     build: ./infra/mysql
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=phper
+      - MYSQL_PASSWORD=secret
+      - MYSQL_ROOT_PASSWORD=secret
+      - TZ=Asia/Tokyo
     volumes:
       - db-store:/var/lib/mysql
 
