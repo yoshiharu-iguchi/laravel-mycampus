@@ -16,7 +16,7 @@ services:
   db:
     build: ./infra/mysql
     environment:
-      - MYSQL_DATABASE=laravel
+      - MYSQL_DATABASE=laravel_mycampus
       - MYSQL_USER=phper
       - MYSQL_PASSWORD=secret
       - MYSQL_ROOT_PASSWORD=secret

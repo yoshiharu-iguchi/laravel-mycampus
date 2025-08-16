@@ -41,21 +41,7 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if ($this->is('admin/*')) {
-        $guard = 'admin';
-    } elseif ($this->is('student/*')) {
-        $guard = 'student';
-    } elseif ($this->is('teacher/*')) {
-        $guard = 'teacher';
-    } elseif ($this->is('guardian/*')) {
-        $guard = 'guardian';
-    } else {
-       throw ValidationException::withMessages([
-            'email' => '不正なログインURLです。',
-        ]);
-    }
-
-        
+        $this->is('admin/*') ? $guard = 'admin' : $guard = 'web';
 
         if (! Auth::guard($guard)->attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
