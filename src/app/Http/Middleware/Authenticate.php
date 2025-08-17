@@ -12,10 +12,18 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
+        if ($request->expectsJson()){
+            return null;
+        }
+
+        if ($request->is('student/*')){
+            return route('student.login');
+        }
+        
         if ($request->is('admin/*')) {
             return route('admin.login');
         }
-        return $request->expectsJson() ? null : route('login');
+        return route('login');
     }   
 }
 

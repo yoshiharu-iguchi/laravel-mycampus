@@ -20,7 +20,7 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post(route('student.register.store'),[
             'name' => 'Test Student',
-            'student_number' => 's123456',
+            'student_number' => 's12345678',
             'email' => 'student@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -31,7 +31,7 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated('student');
 
-        $response->assertRedirect(route('student.home'));
+        $response->assertRedirect(route('student.verification.notice'));
     }
 
 }

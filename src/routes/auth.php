@@ -62,7 +62,7 @@ Route::middleware('guest:student')->group(function () {
 });
 
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,student')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
                 ->name('verification.notice');
 
@@ -91,6 +91,19 @@ Route::middleware('auth:admin')->group(function(){
 });
 
 Route::middleware('auth:student')->group(function () {
+    Route::get('student/verify-email', [EmailVerificationPromptController::class, '__invoke'])
+        ->name('student.verification.notice');
+
+    // 認証リンク検証（署名付きURL）
+    Route::get('student/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
+        ->middleware(['signed','throttle:6,1'])
+        ->name('student.verification.verify');
+
+    // 認証メール再送
+    Route::post('student/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware(['throttle:6,1'])
+        ->name('student.verification.send');
+
     Route::post('student/logout', [Student\Auth\AuthenticatedSessionController::class, 'destroy'])
         ->name('student.logout');
 });

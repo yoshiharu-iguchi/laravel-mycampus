@@ -40,6 +40,6 @@ class RegisteredUserController extends Controller
 
         Auth::guard('student')->login($student);
 
-        return redirect()->intended(route('student.home'));
+        return redirect()->route('student.verification.notice');
     }
 }

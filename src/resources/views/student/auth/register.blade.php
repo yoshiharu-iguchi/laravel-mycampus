@@ -32,7 +32,7 @@
       </div>
     @endif
 
-    <form method="POST" action="{{ route('student.register.store') }}">
+    <form method="POST" action="{{ route('student.register.store',[],false) }}">
       @csrf
 
       <label for="name">氏名</label>
