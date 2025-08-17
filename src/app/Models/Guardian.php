@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Guardian extends Model
+class Guardian extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens,HasFactory,Notifiable;
+
+    protected $fillable = ['name','student_number','password'];
+    protected $hidden = ['password','remember_token'];
 }

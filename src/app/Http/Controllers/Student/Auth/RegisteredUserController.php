@@ -13,7 +13,6 @@ use Illuminate\Auth\Events\Registered;
 
 class RegisteredUserController extends Controller
 {
-    //登録フォーム表示
     public function create()
     {
         return view('student.auth.register');
@@ -26,7 +25,7 @@ class RegisteredUserController extends Controller
             'student_number' => ['required','string','max:20','unique:'.Student::class],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.Student::class],
             'password' => ['required','confirmed',Password::defaults()],
-            'address' => ['nullable','string','max:255'],
+            'address' => ['required','string','max:255'],
         ]);
 
         $student = Student::create([
