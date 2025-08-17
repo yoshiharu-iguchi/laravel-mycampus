@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Student;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['guest','guest:admin'])->group(function () {
@@ -36,6 +37,15 @@ Route::middleware(['guest','guest:admin'])->group(function () {
                 ->name('password.store');
 });
 
+Route::middleware('guest:student')->group(function () {
+    Route::get('student/register',  [Student\Auth\RegisteredUserController::class, 'create'])
+        ->name('student.register');
+
+    Route::post('student/register', [Student\Auth\RegisteredUserController::class, 'store'])
+        ->name('student.register.store'); // ← テストが探している名前付きルート
+});
+
+
 Route::middleware('guest:admin')->group(function(){
     Route::get('admin/login',[Admin\Auth\AuthenticatedSessionController::class,'create'])
                 ->name('admin.login');
@@ -43,6 +53,14 @@ Route::middleware('guest:admin')->group(function(){
     Route::post('admin/login',[Admin\Auth\AuthenticatedSessionController::class,'store'])
                 ->name('admin.login.store');
 });
+
+Route::middleware('guest:student')->group(function () {
+    Route::get('student/login',  [Student\Auth\AuthenticatedSessionController::class, 'create'])
+        ->name('student.login');
+    Route::post('student/login', [Student\Auth\AuthenticatedSessionController::class, 'store'])
+        ->name('student.login.store');
+});
+
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
@@ -70,5 +88,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth:admin')->group(function(){
     Route::post('admin/logout',[Admin\Auth\AuthenticatedSessionController::class,'destroy'])
                 ->name('admin.logout');
+});
+
+Route::middleware('auth:student')->group(function () {
+    Route::post('student/logout', [Student\Auth\AuthenticatedSessionController::class, 'destroy'])
+        ->name('student.logout');
 });
 
