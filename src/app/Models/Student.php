@@ -12,8 +12,13 @@ class Student extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens,HasFactory,Notifiable;
 
-    protected $fillable = [
-        'name','student_number','email','password'];
+    protected $fillable = ['name','student_number','email','password'];
 
     protected $hidden = ['password','remember_token'];
+
+    public function guardian() 
+    {
+        return $this->hasOne(Guardian::class);
+    }  
 }
+    

@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
+use App\Http\Controllers\Guardian;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['guest','guest:admin'])->group(function () {
@@ -42,7 +43,15 @@ Route::middleware('guest:student')->group(function () {
         ->name('student.register');
 
     Route::post('student/register', [Student\Auth\RegisteredUserController::class, 'store'])
-        ->name('student.register.store'); // ← テストが探している名前付きルート
+        ->name('student.register.store'); 
+});
+
+Route::middleware('guest:guardian')->group(function(){
+    Route::get('guardian/register',[Guardian\Auth\RegisteredUserController::class,'create'])
+        ->name('guardian.register');
+
+    Route::post('guardian/register',[Guardian\Auth\RegisteredUserController::class,'store'])
+        ->name('guardian.register.store');
 });
 
 
@@ -61,8 +70,15 @@ Route::middleware('guest:student')->group(function () {
         ->name('student.login.store');
 });
 
+Route::middleware('guest:guardian')->group(function(){
+    Route::get('guardian/login',[Guardian\Auth\AuthenticatedSessionController::class,'create'])
+        ->name('guardian.login');
+    Route::post('guardian/register',[Guardian\Auth\AuthenticatedSessionController::class,'store'])
+        ->name('guardian.register.store');
+});
 
-Route::middleware('auth:web,student')->group(function () {
+
+Route::middleware('auth:web,student,guardian')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
                 ->name('verification.notice');
 

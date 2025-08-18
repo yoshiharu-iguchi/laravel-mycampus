@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\App;
+
 return [
 
     /*
@@ -36,9 +38,10 @@ return [
     */
 
     'guards' => [
-        'web' => ['driver' => 'session', 'provider' => 'users', ],
+        'web' => ['driver' => 'session', 'provider' => 'users' ],
         'admin' => ['driver' => 'session','provider' => 'admins'],
         'student' => ['driver' => 'session', 'provider' => 'students'],
+        'guardian' => ['driver' => 'session', 'provider' => 'guardians']
     ],
     
 
@@ -60,9 +63,10 @@ return [
     */
 
     'providers' => [
-        'users' => ['driver' => 'eloquent', 'model' => App\Models\User::class],
-        'admins' => ['driver' => 'eloquent', 'model' => App\Models\Admin::class],
-        'students' => ['driver' => 'eloquent','model' => App\Models\Student::class],
+        'users' => ['driver' => 'eloquent', 'model' => \App\Models\User::class],
+        'admins' => ['driver' => 'eloquent', 'model' => \App\Models\Admin::class],
+        'students' => ['driver' => 'eloquent','model' => \App\Models\Student::class],
+        'guardians' => ['driver' => 'eloquent', 'model' => \App\Models\Guardian::class],
     ],
         // 'users' => [
         //     'driver' => 'database',

@@ -2,15 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Guardian extends Authenticatable
-{
+class Guardian extends Authenticatable implements MustVerifyEmail {
+
     use HasApiTokens,HasFactory,Notifiable;
 
-    protected $fillable = ['name','student_number','password'];
+    protected $fillable = ['name','email','password','student_id'];
     protected $hidden = ['password','remember_token'];
+    
+    public function student(){
+        
+        return $this->belongsTo(Student::class);
+    }
+
 }
+    
+
