@@ -73,8 +73,8 @@ Route::middleware('guest:student')->group(function () {
 Route::middleware('guest:guardian')->group(function(){
     Route::get('guardian/login',[Guardian\Auth\AuthenticatedSessionController::class,'create'])
         ->name('guardian.login');
-    Route::post('guardian/register',[Guardian\Auth\AuthenticatedSessionController::class,'store'])
-        ->name('guardian.register.store');
+    Route::post('guardian/login',[Guardian\Auth\AuthenticatedSessionController::class,'store'])
+        ->name('guardian.login.store');
 });
 
 
@@ -122,5 +122,25 @@ Route::middleware('auth:student')->group(function () {
 
     Route::post('student/logout', [Student\Auth\AuthenticatedSessionController::class, 'destroy'])
         ->name('student.logout');
+});
+
+Route::middleware('auth:guardian')->group(function () {
+    // 認証要求画面（未認証ユーザーに「メール確認してね」を出す）
+    Route::get('guardian/verify-email', [EmailVerificationPromptController::class, '__invoke'])
+        ->name('guardian.verification.notice');
+
+    // 認証リンク検証（署名付きURL）
+    Route::get('guardian/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
+        ->middleware(['signed','throttle:6,1'])
+        ->name('guardian.verification.verify');
+
+    // 認証メール再送
+    Route::post('guardian/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware(['throttle:6,1'])
+        ->name('guardian.verification.send');
+
+    // ログアウト（任意、既に他所にあれば不要）
+    Route::post('guardian/logout', [Guardian\Auth\AuthenticatedSessionController::class, 'destroy'])
+        ->name('guardian.logout');
 });
 

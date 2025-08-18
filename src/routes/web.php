@@ -27,7 +27,7 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
 });
 
 //保護者ルート
-Route::group(['prefix' => 'guardian','as' => 'guardian', 'middleware' => 'auth:guardian'],function(){
+Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:guardian'],function(){
     Route::get('home',[Guardian\HomeController::class,'index'])->name('home');
 });
 

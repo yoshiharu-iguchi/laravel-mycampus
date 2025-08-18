@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Student\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
-use Dotenv\Exception\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +21,7 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request):RedirectResponse
     {
-        if (! Auth::guard('student')->attempt($request->only('email','password'),
+        if (! Auth::guard('guardian')->attempt($request->only('email','password'),
         $request->boolean('remember'))){
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
@@ -30,17 +30,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('student.home'));
+        return redirect()->intended(route('guardian.home'));
     }
 
     public function destroy(Request $request):RedirectResponse
     {
-        Auth::guard('student')->logout();
+        Auth::guard('guardian')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/student/login');
+        return redirect('/guardian/login');
     }
 }

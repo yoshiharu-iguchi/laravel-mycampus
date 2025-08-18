@@ -19,6 +19,10 @@ class Authenticate extends Middleware
         if ($request->is('student/*')|| $request->is('verify-email*') || $request->is('email/verification-notification')){
             return route('student.login');
         }
+
+        if ($request->is('guardian/*')|| $request->is('verify-email*') || $request->is('email/verification-notification')){
+            return route('guardian.login');
+        }
         
         if ($request->is('admin/*')) {
             return route('admin.login');
