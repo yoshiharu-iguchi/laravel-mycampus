@@ -41,7 +41,8 @@ return [
         'web' => ['driver' => 'session', 'provider' => 'users' ],
         'admin' => ['driver' => 'session','provider' => 'admins'],
         'student' => ['driver' => 'session', 'provider' => 'students'],
-        'guardian' => ['driver' => 'session', 'provider' => 'guardians']
+        'guardian' => ['driver' => 'session', 'provider' => 'guardians'],
+        'teacher' => ['driver' => 'session', 'provider' => 'teachers'],
     ],
     
 
@@ -67,6 +68,7 @@ return [
         'admins' => ['driver' => 'eloquent', 'model' => \App\Models\Admin::class],
         'students' => ['driver' => 'eloquent','model' => \App\Models\Student::class],
         'guardians' => ['driver' => 'eloquent', 'model' => \App\Models\Guardian::class],
+        'teachers' => ['driver' => 'eloquent', 'model' => \App\Models\Teacher::class],
     ],
         // 'users' => [
         //     'driver' => 'database',

@@ -21,6 +21,7 @@ Route::get('/',function() {
 });
 
 require __DIR__.'/auth.php';
+
 //学生ルート
 Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:student'], function() {
     Route::get('home', [Student\HomeController::class,'index'])->name('home');

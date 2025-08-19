@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+
+
 class AuthenticatedSessionController extends Controller
 {
     public function create():View
@@ -19,11 +21,16 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request):RedirectResponse
     {
-        $request->authenticate();
+        if (! Auth::guard('guardian')->attempt($request->only('email','password'),
+        $request->boolean('remember'))){
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->route('guardian.home');
     }
 
     public function destroy(Request $request):RedirectResponse
@@ -34,6 +41,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/guardian/login');
+        return redirect()->route('guardian.login');
     }
 }

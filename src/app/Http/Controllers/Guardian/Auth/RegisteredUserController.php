@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Guardian\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Guardian;
 use App\Models\Student;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Auth\Events\Registered;
 
@@ -21,35 +21,40 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request)
     {
-        $data= $request->validate([
-            'name' => ['required','string','max:255'],
-            'email' => ['required','string','lowercase','email','max:255','unique:guardians,email'],
-            'password' => ['required','confirmed',Password::defaults()],
-            'student_number' => ['required','string','max:50','exists:students,student_number'],
+        // 1) 入力検証：学籍番号は存在必須、メールはguardians側でユニーク
+        $request->validate([
+            'student_number' => ['required', 'string', 'max:20', 'exists:students,student_number'],
+            'name'           => ['required','string','max:255'],
+            'email'          => ['required','string','lowercase','email','max:255','unique:guardians,email'],
+            'password'       => ['required','confirmed', Password::defaults()],
         ]);
-        $student = Student::where('student_number',$data['student_number'])->first();
 
-        if (!$student) {
+        // 2) 学生を紐付ける
+        $student = Student::where('student_number', $request->student_number)->first();
 
-            return back()->withErrors(['student_number' => '該当する学籍番号の学生が見つかりません。'])->withInput();
+        // 3) 同じ student_id に既に保護者がいないかチェック（1対1を担保）
+        //    ※ DB側でも guardians.student_id に UNIQUE 制約を付けておくのがベスト
+        if (Guardian::where('student_id', $student->id)->exists()) {
+            return back()->withErrors([
+                'student_number' => 'この学籍番号には既に保護者アカウントが登録済みです。'
+            ])->withInput();
         }
 
-        if ($student->guardian()->exists()) {
-            return back()->withErrors(['student_number' => 'この学生には既に保護者アカウントが登録されています。'])->withInput();
-        }
-
+        // 4) 作成
         $guardian = Guardian::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
             'student_id' => $student->id,
+            'name'       => $request->name,
+            'email'      => $request->email,
+            'password'   => Hash::make($request->password),
         ]);
 
+        // 5) メール認証通知（Guardianモデルが MustVerifyEmail を実装している前提）
         event(new Registered($guardian));
 
+        // 6) ログイン → 認証案内ページへ
         Auth::guard('guardian')->login($guardian);
 
-        return redirect()->route('guardian.home');
+        return redirect()->route('guardian.verification.notice');
     }
 }
 

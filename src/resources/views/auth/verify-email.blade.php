@@ -12,7 +12,6 @@
     <div class="mt-4 flex items-center justify-between">
         <form method="POST" action="{{ route('verification.send') }}">
             @csrf
-
             <div>
                 <x-primary-button>
                     {{ __('Resend Verification Email') }}
@@ -20,12 +19,24 @@
             </div>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
+        @php
+            $guard = auth('guardian')->check()
+                ? 'guardian'
+                : (auth('student')->check() ? 'student' : null);
+        @endphp
 
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
+        @if ($guard)
+            <form method="POST" action="{{ route($guard . '.logout') }}">
+                @csrf
+                <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    {{ __('Log Out') }}
+                </button>
+            </form>
+        @else
+            {{-- 念のため未ログイン時はリンク表示に切替（POST先がないため） --}}
+            <a href="{{ route('student.login') }}" class="underline text-sm text-gray-600 hover:text-gray-900">
+                {{ __('Log In') }}
+            </a>
+        @endif
     </div>
 </x-guest-layout>

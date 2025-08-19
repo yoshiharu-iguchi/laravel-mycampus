@@ -21,7 +21,7 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request):RedirectResponse
     {
-        if (! Auth::guard('guardian')->attempt($request->only('email','password'),
+        if (! Auth::guard('student')->attempt($request->only('email','password'),
         $request->boolean('remember'))){
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
@@ -30,17 +30,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('guardian.home'));
+        return redirect()->intended(route('student.home'));
     }
 
     public function destroy(Request $request):RedirectResponse
     {
-        Auth::guard('guardian')->logout();
+        Auth::guard('student')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/guardian/login');
+        return redirect('/student/login');
     }
 }
