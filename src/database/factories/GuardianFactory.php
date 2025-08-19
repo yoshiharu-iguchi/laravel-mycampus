@@ -3,10 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Guardian;
-namespace Database\Factories;
-
 use App\Models\Student;
-use App\Models\Guardian;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;

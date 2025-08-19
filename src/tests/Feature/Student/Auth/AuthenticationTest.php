@@ -14,16 +14,14 @@ class AuthenticationTest extends TestCase
 
     public function test_login_screen_can_be_rendered(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get('/student/login');
 
         $response->assertStatus(200);
     }
 
     public function test_student_can_authenticate_using_the_login_screen(): void
     {
-        $student = Student::factory()->create([
-            'password' => Hash::make('password'),
-        ]);
+        $student = Student::factory()->create();
 
         $response = $this->post(route('student.login.store'), [
             'email' => $student->email,
@@ -38,21 +36,21 @@ class AuthenticationTest extends TestCase
     {
         $user = Student::factory()->create();
 
-        $this->post('/login', [
+        $this->post('/student/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 
-        $this->assertGuest();
+        $this->assertGuest('student');
     }
 
     public function test_students_can_logout(): void
     {
         $student = Student::factory()->create();
 
-        $response = $this->actingAs($student)->post('/logout');
+        $response = $this->actingAs($student,'student')->post('/student/logout');
 
-        $this->assertGuest();
-        $response->assertRedirect('/');
+        $this->assertGuest('student');
+        $response->assertRedirect('student/login');
     }
 }
