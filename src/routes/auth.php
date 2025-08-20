@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
+use App\Http\Controllers\Teacher;
 
 // メール認証系（invoke → show/verify へ変更）
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -82,6 +83,18 @@ Route::middleware('guest:admin')->group(function () {
 
 Route::middleware('auth:admin')->group(function () {
     Route::post('admin/logout', [Admin\Auth\AuthenticatedSessionController::class, 'destroy'])->name('admin.logout');
+});
+
+/* =========================
+   Teacher: login / logout（メール認証は不要）
+   ========================= */
+Route::middleware('guest:teacher')->group(function () {
+    Route::get('teacher/login',  [Teacher\Auth\AuthenticatedSessionController::class, 'create'])->name('teacher.login');
+    Route::post('teacher/login', [Teacher\Auth\AuthenticatedSessionController::class, 'store'])->name('teacher.login.store');
+});
+
+Route::middleware('auth:teacher')->group(function () {
+    Route::post('teacher/logout', [Teacher\Auth\AuthenticatedSessionController::class, 'destroy'])->name('teacher.logout');
 });
 
 // 学生・保護者 共通の「検証リンク」(メール内URLが参照するデフォルト名)

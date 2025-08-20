@@ -25,6 +25,7 @@ class AuthenticationTest extends TestCase
     public function test_teachers_can_authenticate_using_the_login_screen():void
     {
         $teacher = new Teacher();
+        $teacher->name = 'テスト先生';
         $teacher->email = 'teacher@example.com';
         $teacher->password = Hash::make('password');
         $teacher->save();
@@ -41,6 +42,7 @@ class AuthenticationTest extends TestCase
     public function test_teachers_can_not_authenticate_with_invalid_password():void
     {
         $teacher = new Teacher();
+        $teacher->name = 'テスト先生';
         $teacher->email = 'teacher@example.com';
         $teacher->password = Hash::make('teacher');
         $teacher->save();
@@ -56,6 +58,7 @@ class AuthenticationTest extends TestCase
     public function test_teachers_can_logout():void
     {
         $teacher = new Teacher();
+        $teacher->name = 'テスト先生';
         $teacher->email = 'teacher@example.com';
         $teacher->password = Hash::make('password');
         $teacher->save();
@@ -63,6 +66,6 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($teacher,'teacher')->post('/teacher/logout');
 
         $this->assertGuest('teacher');
-        $response->assertRedirect('/');
+        $response->assertRedirect('teacher/login');
     }
 }
