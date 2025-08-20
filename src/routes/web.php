@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
+use App\Http\Controllers\Teacher;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,11 @@ Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:
 // 管理者ルート
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'],function(){
     Route::get('home',[Admin\HomeController::class,'index'])->name('home');
+});
+
+// 教員ルート
+Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:teacher'],function(){
+    Route::get('home',[Teacher\HomeController::class,'index'])->name('home');
 });
 
 
