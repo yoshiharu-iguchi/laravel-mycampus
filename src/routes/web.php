@@ -36,6 +36,8 @@ Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:
 // 管理者ルート
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'],function(){
     Route::get('home',[Admin\HomeController::class,'index'])->name('home');
+
+    Route::resource('students',Admin\StudentController::class)->only(['index','show']);
 });
 
 // 教員ルート

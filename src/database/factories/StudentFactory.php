@@ -16,8 +16,6 @@ class StudentFactory extends Factory
 
     public function definition(): array
     {
-        // 学籍番号の例: S2025000123 のような形式
-        $studentNumber = 'S'. now()->format('Y').$this->faker->unique()->numerify('########');
 
         return [
             'name'           => $this->faker->name(),                         
