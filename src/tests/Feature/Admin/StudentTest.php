@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\Admin;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Models\Guardian;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -34,13 +35,12 @@ class StudentTest extends TestCase
     
     public function test_guardian_cannot_access_admin_students_index():void
     {
-        $teacher = new Teacher();
-        $teacher->name = 'テスト太郎';
-        $teacher->email = 'teacher@example.com';
-        $teacher->password = Hash::make('password');
-        $teacher->save();
+        $student = Student::factory()->create();
 
-        $response = $this->actingAs($teacher,'teacher')->get(route('admin.students.index'));
+        $guardian = Guardian::factory()->create(['student_id'=>$student->id,]);
+        
+
+        $response = $this->actingAs($guardian,'guardian')->get(route('admin.students.index'));
 
         $response->assertRedirect(route('admin.login'));
 
