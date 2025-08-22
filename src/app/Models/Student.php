@@ -12,7 +12,7 @@ class Student extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens,HasFactory,Notifiable;
 
-    protected $fillable = ['name','student_number','email','password','address'];
+    protected $fillable = ['name','student_number','email','address'];
 
     protected $hidden = ['password','remember_token'];
 
