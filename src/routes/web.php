@@ -6,6 +6,7 @@ use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
 use App\Http\Controllers\Guardian\RegisterWithTokenController;
+use App\Http\Controllers\Admin\StudentInviteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,7 @@ Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:
     Route::get('home',[Guardian\HomeController::class,'index'])->name('home');
 });
 // トークン付き保護者登録ルートを追加(ログイン不要)
-Route::prefix('guardians')->name('guardian.')->middleware('throttle:30,1')->group(function(){
+Route::prefix('guardians')->name('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function(){
     Route::get('register/complete',[RegisterWithTokenController::class,'complete'])
         ->name('register.complete');
 
@@ -55,6 +56,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 
     Route::resource('students',Admin\StudentController::class)->only(['index','show','edit','update','destroy']);
     Route::resource('teachers',Admin\TeacherController::class);
+
+    // 学生に招待メールを再送(POST)
+    Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])
+        ->name('students.invite');
 });
 
 // 教員ルート
