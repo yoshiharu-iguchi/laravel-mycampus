@@ -12,7 +12,7 @@ class Guardian extends Authenticatable implements MustVerifyEmail {
 
     use HasApiTokens,HasFactory,Notifiable;
 
-    protected $fillable = ['name','email','password','student_id'];
+    protected $fillable = ['name','email','password','student_id','relationship','password'];
     protected $hidden = ['password','remember_token'];
 
     protected $casts    = ['email_verified_at' => 'datetime',];

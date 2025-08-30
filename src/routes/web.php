@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
+use App\Http\Controllers\Guardian\RegisterWithTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,21 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
 Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:guardian'],function(){
     Route::get('home',[Guardian\HomeController::class,'index'])->name('home');
 });
+// トークン付き保護者登録ルートを追加(ログイン不要)
+Route::prefix('guardians')->name('guardian.')->middleware('throttle:30,1')->group(function(){
+    Route::get('register/complete',[RegisterWithTokenController::class,'complete'])
+        ->name('register.complete');
+
+    Route::get('register/{token}',[RegisterWithTokenController::class,'show'])
+        ->where('token','[A-Fa-f0-9]{64}')
+        ->name('register.token.show');
+
+    Route::post('register/{token}',[RegisterWithTokenController::class,'store'])
+        ->where('token','[A-Fa-f0-9]{64}')
+        ->name('register.token.store');
+});
+
+
 
 // 管理者ルート
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'],function(){

@@ -17,8 +17,20 @@ class Student extends Authenticatable implements MustVerifyEmail
 
     protected $hidden = ['password','remember_token','guardian_registration_token',];
 
-    protected $casts = ['email_verified_at' => 'datetime',];
+    protected $casts = ['email_verified_at' => 'datetime','guardian_registered_at' => 'datetime',];
 
+    // 追加：モデルイベント 新規作成(insert)直前に未セットなら64桁トークン自動発行します。
+
+    protected static function booted():void
+    {
+        static::creating(function (Student $student)
+        {
+            if (empty($student->guardian_registration_token)){
+                [$token,$expiresAt] = self::issueGuardianToken(30);
+                $student->guardian_registration_token = $token;
+            }
+        });
+    }
     public static function issueGuardianToken(int $days = 30): array
     {
         $uuid = (string) Str::uuid();

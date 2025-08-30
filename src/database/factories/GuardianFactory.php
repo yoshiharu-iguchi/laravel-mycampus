@@ -25,6 +25,7 @@ class GuardianFactory extends Factory
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'password' => Hash::make('password'),
+            'relationship' => $this->faker->randomElement(['父','母','祖父','祖母']),
             'email_verified_at' => now(),
         ];
     }
