@@ -9,6 +9,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
+
+use Illuminate\Support\Facades\Mail;
+use App\Mail\GuardianInviteMail;
+use Illuminate\Support\Facades\Schema;
+
 class Student extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens,HasFactory,Notifiable;
@@ -29,6 +34,9 @@ class Student extends Authenticatable implements MustVerifyEmail
                 [$token,$expiresAt] = self::issueGuardianToken(30);
                 $student->guardian_registration_token = $token;
             }
+        });
+        static::created(function (Student $student) {
+            Mail::to($student->email)->queue(new GuardianInviteMail($student));
         });
     }
     public static function issueGuardianToken(int $days = 30): array
