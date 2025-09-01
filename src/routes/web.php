@@ -56,6 +56,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 
     Route::resource('students',Admin\StudentController::class)->only(['index','show','edit','update','destroy']);
     Route::resource('teachers',Admin\TeacherController::class);
+    Route::resource('subjects',Admin\SubjectController::class);
 
     // 学生に招待メールを再送(POST)
     Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])

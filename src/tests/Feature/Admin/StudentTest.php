@@ -60,7 +60,7 @@ class StudentTest extends TestCase
         $response->assertRedirect(route('admin.login'));
     }
 
-    // ログイン済みの管理者は管理者側の会員一覧ページにアクセスできる
+    // ログイン済みの管理者は管理者側の学生一覧ページにアクセスできる
     public function test_admin_can_access_admin_students_index()
     {
         $admin = new Admin();
@@ -152,7 +152,7 @@ class StudentTest extends TestCase
         $response->assertRedirect(route('admin.login'));
     }
 
-    // ログイン済みの教員は管理者側の学生詳細ページにアクセスできない
+    // ログイン済みの教員は管理者側の学生編集ページにアクセスできない
     public function test_teacher_cannot_access_admin_student_edit():void
     {
         $teacher = new Teacher();
