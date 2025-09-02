@@ -20,4 +20,14 @@ class Subject extends Model
         'capacity',
         'description',
     ];
+
+    public function enrollments(){
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function students(){
+        return $this->belongsToMany(Student::class,'enrollments')
+        ->withPivot(['year','term','status','registered_at'])
+        ->withTimestamps();
+    }
 }
