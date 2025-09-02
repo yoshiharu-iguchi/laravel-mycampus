@@ -23,8 +23,8 @@ class EnrollmentFactory extends Factory
         return [
             'student_id'    => Student::factory(),
             'subject_id'    => Subject::factory(),
-            'year'          => now()->year,
-            'term'          => $this->faker->randomElement(['前期','後期','通年']),
+            'year'          => 2025,
+            'term'          => fake()->randomElement(Enrollment::TERMS),
             'status'        => 'registered',
             'registered_at' => now(),
         ];

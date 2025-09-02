@@ -12,6 +12,7 @@ class Enrollment extends Model
 {
     use HasFactory;
 
+    public const TERMS = ['前期','後期','通年'];
     protected $fillable = [
         'student_id','subject_id','year','term','status','registered_at',
     ];

@@ -32,5 +32,6 @@
     <hr>
     <small class="muted">※ このページは教員アカウントでログインした方のみが閲覧できます。</small>
   </div>
+  <a href="{{ route('teacher.enrollments.index') }}" class="btn btn-sm btn-primary">履修一覧へ</a>
 </body>
 </html>

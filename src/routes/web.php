@@ -7,6 +7,8 @@ use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Guardian\RegisterWithTokenController;
+use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
+use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
 use App\Http\Controllers\Admin\StudentInviteController;
 use Monolog\Handler\RotatingFileHandler;
 
@@ -87,6 +89,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::resource('teachers',Admin\TeacherController::class);
     Route::resource('subjects',Admin\SubjectController::class);
 
+    // 履修閲覧(管理機能)
+    Route::get('enrollments',[AdminEnrollmentController::class,'index'])->name('enrollments.index');
+    Route::get('enrollments/subject/{subject}',[AdminEnrollmentController::class,'bySubject'])->name('enrollments.bySubject');
+    Route::get('enrollments/student/{student}',[AdminEnrollmentController::class,'byStudent'])->name('enrollments.byStudent');
+
     // 学生に招待メールを再送(POST)
     Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])
         ->name('students.invite');
@@ -95,7 +102,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 // 教員ルート
 Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:teacher'],function(){
     Route::get('home',[Teacher\HomeController::class,'index'])->name('home');
+
+    // 履修閲覧・管理機能(教員)
+    Route::get('enrollments',[TeacherEnrollmentController::class,'index'])
+        ->name('enrollments.index');
 });
+
 
 
     
