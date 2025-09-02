@@ -127,8 +127,8 @@ class SubjectController extends Controller
             'name_en'      => '科目名（英語）',
             'credits'      => '単位数',
             'year'         => '年度',
-            'term'         => '学期',
-            'category'     => '区分',
+            'term'         => '開講期間',
+            'category'     => '必修/選択',
             'capacity'     => '定員',
             'description'  => '説明',
         ];

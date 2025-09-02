@@ -61,7 +61,7 @@
         </div>
 
         <div class="col-md-4">
-          <label class="form-label">学期</label>
+          <label class="form-label">開講期間</label>
           <select name="term" class="form-select">
             <option value="" @selected(old('term', $subject->term)===null)>未選択</option>
             @foreach (['前期','後期','通年'] as $t)
@@ -71,7 +71,7 @@
         </div>
 
         <div class="col-md-4">
-          <label class="form-label">区分</label>
+          <label class="form-label">必修/選択</label>
           <select name="category" class="form-select" required>
             @foreach (['required'=>'必修','elective'=>'選択'] as $val=>$label)
               <option value="{{ $val }}" @selected(old('category', $subject->category)===$val)>{{ $label }}</option>

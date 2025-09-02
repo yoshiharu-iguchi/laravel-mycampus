@@ -56,11 +56,11 @@
             <td>{{ $subject->year }}</td>
           </tr>
           <tr>
-            <th class="table-light">学期</th>
+            <th class="table-light">開講期間</th>
             <td>{{ $subject->term }}</td>
           </tr>
           <tr>
-            <th class="table-light">区分</th>
+            <th class="table-light">必修/選択</th>
             <td>
               @if($subject->category === 'required') 必修 @elseif($subject->category === 'elective') 選択 @else {{ $subject->category }} @endif
             </td>
