@@ -30,4 +30,9 @@ class Subject extends Model
         ->withPivot(['year','term','status','registered_at'])
         ->withTimestamps();
     }
+
+    public function getDisplayNameAttribute()
+    {
+        return $this->name_ja ?: ($this->subject_code ?:'不明');
+    }
 }

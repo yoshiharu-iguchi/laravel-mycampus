@@ -71,8 +71,8 @@
             <th>科目名</th>
             <th>単位</th>
             <th>年度</th>
-            <th>学期</th>
-            <th>区分</th>
+            <th>開講期間</th>
+            <th>必修/選択</th>
             <th>定員</th>
             <th style="width: 160px;"></th>
           </tr>
