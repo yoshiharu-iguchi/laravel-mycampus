@@ -8,11 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
-
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Enrollment;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\GuardianInviteMail;
-use Illuminate\Support\Facades\Schema;
+
 
 class Student extends Authenticatable implements MustVerifyEmail
 {
@@ -51,6 +51,18 @@ class Student extends Authenticatable implements MustVerifyEmail
     public function guardian() 
     {
         return $this->hasOne(Guardian::class);
-    }  
+    } 
+    
+    public function enrollments(){
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class,'enrollments')
+        ->withPivot(['year','term','status','registered_at'])
+        ->withTimestamps();
+                    
+    }
 }
     

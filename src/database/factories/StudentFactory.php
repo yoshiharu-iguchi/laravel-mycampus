@@ -18,13 +18,14 @@ class StudentFactory extends Factory
     {
 
         return [
-            'name'           => $this->faker->name(),                         
-            'student_number' => 's'. $this->faker->unique()->numerify('########'),                               
-            'email'          => $this->faker->unique()->safeEmail(), 
-            'email_verified_at' => now(),          
-            'address'        => $this->faker->address(),                       
-            'password'       => Hash::make('password'),                                                          
-            'remember_token' => Str::random(10),                               
+            'name'                    => $this->faker->name(),
+            'student_number'          => 'S' . $this->faker->unique()->numerify('2########'),
+            'email'                   => $this->faker->unique()->safeEmail(),
+            'email_verified_at'       => null, // 必要なら now() に
+            'password'                => Hash::make('password'), // ログイン検証用
+            'remember_token'          => Str::random(10),
+            'address'                 => $this->faker->city(),
+            'guardian_registration_token' => Str::random(64),                               
         ];
     }
 }

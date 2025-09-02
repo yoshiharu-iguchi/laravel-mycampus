@@ -23,5 +23,6 @@
       <button type="submit">ログアウト</button>
     </form>
   </div>
+  <a href="{{ route('admin.enrollments.index') }}" class="btn btn-sm btn-primary">履修一覧へ</a>
 </body>
 </html>

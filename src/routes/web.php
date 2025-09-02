@@ -5,8 +5,12 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
+
 use App\Http\Controllers\Guardian\RegisterWithTokenController;
+use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
+use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
 use App\Http\Controllers\Admin\StudentInviteController;
+use Monolog\Handler\RotatingFileHandler;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +28,37 @@ Route::get('/',function() {
 });
 
 require __DIR__.'/auth.php';
+Route::get('/dashboard', function () {
+    if (auth('student')->check())  return redirect()->route('student.home');
+    if (auth('teacher')->check())  return redirect()->route('teacher.home');
+    if (auth('admin')->check())    return redirect()->route('admin.home');
+    if (auth('guardian')->check()) return redirect()->route('guardian.home');
+    return redirect('/'); // 未ログインなど
+})->name('dashboard');
+
+Route::get('/profile', fn () => redirect()->route('dashboard'))->name('profile.edit');
+
+Route::post('/logout', function () {
+    foreach (['student','teacher','admin','guardian','web'] as $guard) {
+        if (auth($guard)->check()) { auth($guard)->logout(); }
+    }
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
 
 //学生ルート
 Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:student'], function() {
     Route::get('home', [Student\HomeController::class,'index'])->name('home');
+
+    // 科目一覧・詳細
+    Route::get('subjects',[Student\SubjectController::class,'index'])->name('subjects.index');
+    Route::get('subjects/{subject}',[Student\SubjectController::class,'show'])->name('subjects.show');
+
+    // 履修一覧/登録/取り消し
+    Route::get('enrollments',[Student\EnrollmentController::class,'index'])->name('enrollments.index');
+    Route::post('enrollments',[Student\EnrollmentController::class,'store'])->name('enrollments.store');
+    Route::delete('enrollments/{enrollment}',[Student\EnrollmentController::class,'destroy'])->name('enrollments.destroy');
 });
 
 //保護者ルート
@@ -58,6 +89,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::resource('teachers',Admin\TeacherController::class);
     Route::resource('subjects',Admin\SubjectController::class);
 
+    // 履修閲覧(管理機能)
+    Route::get('enrollments',[AdminEnrollmentController::class,'index'])->name('enrollments.index');
+    Route::get('enrollments/subject/{subject}',[AdminEnrollmentController::class,'bySubject'])->name('enrollments.bySubject');
+    Route::get('enrollments/student/{student}',[AdminEnrollmentController::class,'byStudent'])->name('enrollments.byStudent');
+
     // 学生に招待メールを再送(POST)
     Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])
         ->name('students.invite');
@@ -66,7 +102,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 // 教員ルート
 Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:teacher'],function(){
     Route::get('home',[Teacher\HomeController::class,'index'])->name('home');
+
+    // 履修閲覧・管理機能(教員)
+    Route::get('enrollments',[TeacherEnrollmentController::class,'index'])
+        ->name('enrollments.index');
 });
+
 
 
     
