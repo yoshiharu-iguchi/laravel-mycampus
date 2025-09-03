@@ -25,6 +25,11 @@ class RegisterWithTokenController extends Controller
             // 学生が見つからない＝トークン無効
             return response()->view('guardian.auth.token-error',[],404);
         }
+        // 2)既に保護者登録ずみなら完了画面へ
+        if ($student->guardian()->exists()){
+            return redirect()->route('guardian.register.complete')
+                ->with('status','既に登録済みです。');
+        }
 
         // フォームを表示
         return view('guardian.auth.register-with-token',[
@@ -39,55 +44,42 @@ class RegisterWithTokenController extends Controller
         $request->merge(['token' => $token]);
         
         // 入力チェック(emailルール重複を整理)
-        $validated = $request->validate([
-            'token' => ['required','string','size:64','regex:/^[0-9a-f]{64}$/i',
-            Rule::exists('students','guardian_registration_token'),],
-            'name' =>['required','string','max:100'],
+        $data = $request->validate([
+            
+            'token' => ['required','alpha_num','size:64',Rule::exists('students','guardian_registration_token')],
+            'name' => ['required','string','max:100'],
             'relationship' => ['required','string','max:20',Rule::in(['父','母','祖父','祖母','その他'])],
-            'email' => ['required','string','email:strict','max:255','unique:guardians,email'],
+            'email' => ['required','email','max:255','unique:guardians,email'],
             'password' => ['required','confirmed',Rules\Password::defaults()],
         ]);
 
-        try {
-            // トランザクションで原子化
-            DB::beginTransaction();
+        $student = Student::where('guardian_registration_token',$data['token'])->first();
 
-            // 同時送信対策：学生レコードに排他ロック
-            $student = Student::where('guardian_registration_token',$token)
-                ->lockForUpdate()->first();
-            
-            if (!$student) {
-                DB::rollBack();
-                return back()->withErrors(['token' => '無効または期限切れのURLです。']);
-            }
+        if($student->guardian()->exists()){
+            return redirect()->route('guardian.register.complete')
+            ->with('status','既に登録されています。');
+        }
+
+        
 
             // 保護者を新規登録
             Guardian::create([
                 'student_id' => $student->id,
-                'name' => $validated['name'],
-                'relationship' => $validated['relationship'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'name' => $data['name'],
+                'relationship' => $data['relationship'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
             ]);
 
-            if (Schema::hasColumn('students','guardian_registered_at')){
-                $student->guardian_registered_at = now();
-
-            }
+            $student->guardian_registered_at = now();
             $student->guardian_registration_token = null;
             $student->save();
 
             DB::commit();
 
-            return redirect()->route('guardian.register.complete')->with('status','registered');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('GUARDIAN_REGISTER_STORE_FAIL',[
-                'token' => $token,
-                'error' => $e->getMessage(),
-            ]);
-            return back()->withErrors(['system' => '登録処理でエラーが発生しました。時間をおいて再度お試しください。']);
-        }
+            return redirect()->route('guardian.register.complete')
+            ->with('status','登録されました。');
+
     }
         
     public function complete()

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Enrollment;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\GuardianInviteMail;
+use App\Models\Guardian;
 
 
 class Student extends Authenticatable implements MustVerifyEmail

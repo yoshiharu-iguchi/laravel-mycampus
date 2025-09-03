@@ -67,16 +67,16 @@ Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:
 });
 // トークン付き保護者登録ルートを追加(ログイン不要)
 Route::prefix('guardians')->name('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function(){
-    Route::get('register/complete',[RegisterWithTokenController::class,'complete'])
-        ->name('register.complete');
-
     Route::get('register/{token}',[RegisterWithTokenController::class,'show'])
-        ->where('token','[A-Fa-f0-9]{64}')
+        ->where('token','[A-Za-z0-9]{64}')
         ->name('register.token.show');
 
     Route::post('register/{token}',[RegisterWithTokenController::class,'store'])
-        ->where('token','[A-Fa-f0-9]{64}')
+        ->where('token','[A-Za-z0-9]{64}')
         ->name('register.token.store');
+
+    Route::get('register/complete',[RegisterWithTokenController::class,'complete'])
+        ->name('register.complete');
 });
 
 

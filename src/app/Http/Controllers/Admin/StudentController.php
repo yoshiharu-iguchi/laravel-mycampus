@@ -26,6 +26,9 @@ class StudentController extends Controller
     }
 
     public function show(Student $student) {
+
+        $student->load('guardian');
+        
         return view('admin.students.show',compact('student'));
     }
 
@@ -33,7 +36,7 @@ class StudentController extends Controller
         return view('admin.students.edit',compact('student'));
     }
 
-     public function update(Request $request,Student $student){
+    public function update(Request $request,Student $student){
         $validated = $request->validate([
             'name' => ['required','string','max:255'],
             'student_number' => ['required','string','max:255',Rule::unique('students','student_number')->ignore($student->id), ],
@@ -48,9 +51,16 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
-        $student->delete();
-        return redirect()->route('admin.students.index')->with('status','学生を削除しました');
+        try{
+            $student->delete();
+            return redirect()
+                    ->route('admin.students.index')
+                    ->with('status','学生を削除しました');
+        } catch (\Throwable $e) {
+            return redirect()
+                    ->route('admin.student.show',$student)
+                    ->with('error','関連データがあるため削除できません。');
+        }
+
     }
-
-
 }

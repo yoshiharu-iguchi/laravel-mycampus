@@ -46,17 +46,59 @@
     </div>
   </div>
 
-  {{-- ★ 保護者登録カード（ここに移動） --}}
+  {{-- 保護者情報カード（学生情報カードの直後） --}}
+  <div class="card mt-3">
+    <div class="card-header">保護者情報</div>
+    <div class="card-body">
+      @if($student->guardian)
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="text-muted small">氏名</div>
+            <div class="fw-semibold">{{ $student->guardian->name }}</div>
+          </div>
+
+          <div class="col-md-2">
+            <div class="text-muted small">続柄</div>
+            <div>{{ $student->guardian->relationship ?? '—' }}</div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="text-muted small">メール</div>
+            <div>{{ $student->guardian->email }}</div>
+          </div>
+
+          <div class="col-12">
+            <div class="small text-muted">作成/更新</div>
+            <div class="small text-muted">
+              作成: {{ $student->guardian->created_at->format('Y-m-d H:i') }}
+              ／ 更新: {{ $student->guardian->updated_at->format('Y-m-d H:i') }}
+            </div>
+          </div>
+        </div>
+      @else
+        <span class="text-muted">保護者はまだ登録されていません。</span>
+      @endif
+    </div>
+  </div> {{-- /保護者情報カード --}}
+
+  {{-- 保護者登録カード（別カード） --}}
   <div class="card mt-3">
     <div class="card-header">保護者登録</div>
     <div class="card-body">
-      @if($student->guardian_registered_at)
+      @php
+        $registeredAt = $student->guardian_registered_at;
+        $hasGuardian  = (bool) $student->guardian;
+      @endphp
+
+      @if($registeredAt || $hasGuardian)
         <p class="mb-2">
           状態: <span class="badge bg-success">登録済み</span>
         </p>
         <dl class="row">
           <dt class="col-sm-3">登録日時</dt>
-          <dd class="col-sm-9">{{ $student->guardian_registered_at?->format('Y-m-d H:i') }}</dd>
+          <dd class="col-sm-9">
+            {{ $registeredAt?->format('Y-m-d H:i') ?? $student->guardian?->created_at?->format('Y-m-d H:i') }}
+          </dd>
         </dl>
       @else
         <p class="mb-2">
@@ -79,29 +121,30 @@
 
         <form method="POST" action="{{ route('admin.students.invite', $student) }}" class="d-inline">
           @csrf
-          <button type="submit" class="btn btn-primary">
-            保護者招待メールを再送
-          </button>
+          <button type="submit" class="btn btn-primary">保護者招待メールを再送</button>
         </form>
       @endif
     </div>
   </div>
 
-  {{-- 戻る・編集・削除ボタン群 --}}
+  {{-- ▼▼▼ ここからボタン群を追加（詳細ページのフッター） ▼▼▼ --}}
   <div class="mt-3 d-flex justify-content-between">
     <a href="{{ route('admin.students.index') }}" class="btn btn-outline-secondary">一覧に戻る</a>
 
     <div>
       <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-primary">編集</a>
 
-      <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline" onsubmit="return confirm('本当に削除しますか？')">
+      <form action="{{ route('admin.students.destroy', $student) }}" method="POST"
+            class="d-inline"
+            onsubmit="return confirm('本当に削除しますか？')">
         @csrf
         @method('DELETE')
         <button type="submit" class="btn btn-danger">削除</button>
       </form>
     </div>
   </div>
+  {{-- ▲▲▲ 追加ここまで ▲▲▲ --}}
 
-</div>
+</div> {{-- ← container を閉じる --}}
 </body>
 </html>
