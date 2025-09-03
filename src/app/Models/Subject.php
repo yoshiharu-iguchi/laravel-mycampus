@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Teacher;
+use App\Models\Enrollment;
 
 class Subject extends Model
 {
@@ -34,5 +36,13 @@ class Subject extends Model
     public function getDisplayNameAttribute()
     {
         return $this->name_ja ?: ($this->subject_code ?:'不明');
+    }
+
+    public function teacher(){
+        return $this->belongsTo(Teacher::class);
+    }
+
+    public function enrollments(){
+        return $this->hasMany(Enrollment::class);
     }
 }
