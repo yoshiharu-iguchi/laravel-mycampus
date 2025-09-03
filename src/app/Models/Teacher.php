@@ -21,4 +21,8 @@ class Teacher extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function subjects(){
+        return $this->hasMany(Subject::class);
+    }
 }
