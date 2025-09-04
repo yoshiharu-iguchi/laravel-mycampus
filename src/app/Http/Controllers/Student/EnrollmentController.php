@@ -34,7 +34,7 @@ class EnrollmentController extends Controller
         $year    = (int) $request->input('year');
         $term    = $request->input('term');
 
-        Enrollment::firstOrCreate(
+        $enrollment = Enrollment::firstOrCreate(
             [
                 'student_id' => $student->id,
                 'subject_id' => $subject->id,
@@ -46,10 +46,10 @@ class EnrollmentController extends Controller
                 'registered_at' => now(),
             ]
         );
+        $message = $enrollment->wasRecentlyCreated ? '履修登録しました':'既に履修済みです';
 
-        return redirect()
-            ->route('student.enrollments.index')
-            ->with('status', '履修登録しました');
+        return back()->with('status',$message);
+            
     }
 
     public function destroy(Enrollment $enrollment): RedirectResponse
