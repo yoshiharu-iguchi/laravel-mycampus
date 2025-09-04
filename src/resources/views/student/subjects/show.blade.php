@@ -66,10 +66,23 @@
 
   {{-- 履修登録カード --}}
   <div class="card">
-    <div class="card-header">履修登録</div>
-    <div class="card-body">
+  <div class="card-header">履修手続き</div>
+  <div class="card-body">
+    @if($enrollment)
+      {{-- ★履修中：取消ボタンのみ表示 --}}
+      <form method="POST" action="{{ route('student.enrollments.destroy', $enrollment) }}"
+            onsubmit="return confirm('この履修を取り消しますか？')">
+        @csrf
+        @method('DELETE')
+        <input type="hidden" name="return_to" value="{{ url()->full() }}"> {{-- 戻り先を明示 --}}
+        <button class="btn btn-outline-danger">履修を取り消す</button>
+      </form>
+      <span class="badge text-bg-success ms-2 align-middle">履修中</span>
+    @else
+      {{-- ★未履修：登録フォームを表示 --}}
       <form method="POST" action="{{ route('student.enrollments.store') }}" class="row g-2 align-items-center">
         @csrf
+        <input type="hidden" name="return_to" value="{{ url()->full() }}"> {{-- 戻り先を明示 --}}
         <input type="hidden" name="subject_id" value="{{ $subject->id }}">
         <input type="hidden" name="year" value="{{ now()->year }}">
 
@@ -87,8 +100,9 @@
           <button class="btn btn-primary">履修登録する</button>
         </div>
       </form>
-    </div>
+    @endif
   </div>
+</div>
 
   {{-- 戻るリンク --}}
   <div class="mt-3">
