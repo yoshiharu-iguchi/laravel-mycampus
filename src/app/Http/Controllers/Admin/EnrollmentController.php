@@ -26,18 +26,16 @@ class EnrollmentController extends Controller
 
         // 2)開講期間は選択肢外の値がきたら無視
         $validTerms = ['前期','後期','通年'];
-        // 開講期間が入力されていて、かつリストに入っていないなら無効にする
+        // 開講期間が入力されていても、かつリストに入っていないなら無効にする
         if (!empty($term) && !in_array($term,$validTerms)){
             $term = null;
         }
-        // 3)基本のクエリ(student,subjectを一緒にとる=N+1回避)
-        $query = Enrollment::query()
-            ->with(['student','subject'])
-            ->latest();
+        // 3)enrollments_countで履修登録者数を自動集計
+        $query = Subject::query()->withCount('enrollments');
 
         // 4)条件があれば順に絞り込み
         if ($subjectId) {
-            $query->where('subject_id',$subjectId);
+            $query->where('id',$subjectId);
 
         }
         if ($year) {
@@ -47,23 +45,23 @@ class EnrollmentController extends Controller
             $query->where('term',$term);
         }
         if ($keyword !== '') {
-            // 学生テーブル側のname/student_numberに対して部分一致
-            $query->whereHas('student',function ($q) use ($keyword) {
-                $q->where('name','like',"%{$keyword}%")->orWhere('student_number','like',"%{$keyword}%");
+            // キーワード：まずは科目名・科目コードに対して部分一致
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name_ja','like',"%{$keyword}%")
+                  ->orWhere('subject_code','like',"%{$keyword}%");
             });
         }
-        // 5)件数サマリー用(全ヒット件数)
-        $enrollments = $query->paginate(20)->appends(request()->query());
+        // 5)並び順とページング(検索条件はリンクに引き継ぐ)
+        $rows = $query->orderBy('year')->orderBy('subject_code')->paginate(20)->appends($request->query());
 
         // 7)プルダウン用：科目一覧(名前順)
         $subjects = Subject::orderBy('name_ja')->get(['id','name_ja','name_en']);
 
-
-
+        // 8)ビューへ
         return view('admin.enrollments.index',[
-            'enrollments' => $enrollments,
+            'rows' => $rows,
             'subjects' => $subjects,
-            'total' => $enrollments->total(),
+            'total' => $rows->total(),
             'keyword' => $keyword,
         ]);
         

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>科目 詳細（管理）</title>
+  <title>科目詳細（管理者）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {{-- Bootstrap --}}
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -10,77 +10,43 @@
 <body class="bg-light">
 <div class="container py-4">
 
-  <h1 class="h4 mb-4">科目 詳細</h1>
+  <h1 class="h4 mb-4">{{ $subject->name_ja }}（{{ $subject->subject_code }}）</h1>
 
-  {{-- フラッシュメッセージ --}}
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-
-  <div class="d-flex gap-2 mb-3">
-    <a href="{{ route('admin.subjects.edit', $subject) }}" class="btn btn-outline-primary">編集</a>
-    <a href="{{ route('admin.subjects.index') }}" class="btn btn-outline-secondary">一覧へ戻る</a>
-
-    <form method="POST" action="{{ route('admin.subjects.destroy', $subject) }}" onsubmit="return confirm('この科目を削除しますか？');" class="ms-auto">
-      @csrf @method('DELETE')
-      <button type="submit" class="btn btn-outline-danger">削除</button>
-    </form>
+  {{-- 科目概要 --}}
+  <div class="card mb-3">
+    <div class="card-body">
+      <p class="mb-1">単位：{{ $subject->credits ?? '—' }}</p>
+      <p class="mb-1">履修者数：{{ $subject->enrollments->count() }} 名</p>
+    </div>
   </div>
 
+  {{-- 履修学生一覧 --}}
   <div class="card">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>学籍番号</th>
+            <th>氏名</th>
+            <th>Email</th>
+          </tr>
+        </thead>
         <tbody>
+        @forelse($subject->enrollments as $enrollment)
           <tr>
-            <th style="width: 200px;" class="table-light">ID</th>
-            <td>{{ $subject->id }}</td>
+            <td>{{ $enrollment->student->id }}</td>
+            <td>{{ $enrollment->student->student_number }}</td>
+            <td>{{ $enrollment->student->name }}</td>
+            <td>{{ $enrollment->student->email }}</td>
           </tr>
+        @empty
           <tr>
-            <th class="table-light">科目コード</th>
-            <td>{{ $subject->subject_code }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">科目名（日本語）</th>
-            <td>{{ $subject->name_ja }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">科目名（英語）</th>
-            <td>{{ $subject->name_en }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">単位</th>
-            <td>{{ $subject->credits }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">年度</th>
-            <td>{{ $subject->year }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">開講期間</th>
-            <td>{{ $subject->term }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">必修/選択</th>
-            <td>
-              @if($subject->category === 'required') 必修 @elseif($subject->category === 'elective') 選択 @else {{ $subject->category }} @endif
+            <td colspan="4" class="text-center text-muted py-5">
+              履修者はいません。
             </td>
           </tr>
-          <tr>
-            <th class="table-light">定員</th>
-            <td>{{ $subject->capacity }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">概要</th>
-            <td class="text-pre-wrap">{{ $subject->description }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">作成日時</th>
-            <td>{{ optional($subject->created_at)->format('Y-m-d H:i') }}</td>
-          </tr>
-          <tr>
-            <th class="table-light">更新日時</th>
-            <td>{{ optional($subject->updated_at)->format('Y-m-d H:i') }}</td>
-          </tr>
+        @endforelse
         </tbody>
       </table>
     </div>

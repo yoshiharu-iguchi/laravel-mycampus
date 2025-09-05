@@ -45,7 +45,7 @@
         {{-- 学期 --}}
         <div class="col-6 col-md-2">
           <select name="term" class="form-select">
-            <option value="">学期</option>
+            <option value="">開講期間</option>
             @foreach(['前期','後期','通年'] as $t)
               <option value="{{ $t }}" @selected(request('term')===$t)>{{ $t }}</option>
             @endforeach
@@ -100,8 +100,8 @@
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="small text-muted">
       全 {{ number_format($total) }} 件
-      @if($enrollments->count())
-        ／ 表示 {{ number_format($enrollments->firstItem()) }}–{{ number_format($enrollments->lastItem()) }} 件
+      @if($rows->count())
+        ／ 表示 {{ number_format($rows->firstItem()) }}–{{ number_format($rows->lastItem()) }} 件
       @endif
     </div>
   </div>
@@ -112,65 +112,38 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width: 90px;">ID</th>
-            <th>学生</th>
-            <th>学籍番号</th>
+            <th style="width: 90px;">科目コード</th>
             <th>科目</th>
             <th>年度</th>
-            <th>学期</th>
-            <th>状態</th>
+            <th>開講期間</th>
+            <th>履修登録者数</th>
             <th style="width: 180px;"></th>
           </tr>
         </thead>
         <tbody>
-        @forelse($enrollments as $e)
+        @forelse($rows as $subject)
           <tr>
-            <td>{{ $e->id }}</td>
+            <td>{{ $subject->subject_code }}</td>
             <td>
-              <a href="{{ route('admin.enrollments.byStudent', $e->student_id) }}" class="link-primary text-decoration-underline">
-                {{ $e->student->name }}
+              <a href="{{ route('admin.enrollments.bySubject', $subject) }}" class="link-primary text-decoration-underline">
+                {{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}
               </a>
             </td>
-            <td>{{ $e->student->student_number }}</td>
-            <td>
-              <a href="{{ route('admin.enrollments.bySubject', $e->subject_id) }}" class="link-primary text-decoration-underline">
-                {{ $e->subject->name_ja ?? $e->subject->name_en ?? '不明' }}
-              </a>
-            </td>
-            <td>{{ $e->year }}</td>
-            <td>{{ $e->term }}</td>
-            <td>
-              @php $status = (string)$e->status; @endphp
-              <span class="badge
-                @if(in_array($status, ['確定','approved','enrolled'])) text-bg-success
-                @elseif(in_array($status, ['取消','canceled','rejected'])) text-bg-danger
-                @elseif(in_array($status, ['保留','pending'])) text-bg-warning
-                @else text-bg-secondary @endif">
-                {{ $e->status_label }}
-              </span>
-            </td>
-            <td class="text-end">
-              <div class="btn-group">
-                <a href="{{ route('admin.students.show', $e->student_id) }}" class="btn btn-sm btn-outline-primary">学生詳細</a>
-                <a href="{{ route('admin.subjects.show', $e->subject_id) }}" class="btn btn-sm btn-outline-secondary">科目詳細</a>
-              </div>
-            </td>
+            <td>{{ $subject->year ?? '-'}}</td>
+            <td>{{ $subject->term ?? '-' }}</td>
+            <td>{{ $subject->enrollments_count }} 名</td>
           </tr>
         @empty
-          <tr>
-            <td colspan="8" class="text-center text-muted py-5">
-              該当する履修登録は見つかりませんでした。
-            </td>
-          </tr>
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">履修登録情報はありません。</td>
+        </tr>
         @endforelse
         </tbody>
-      </table>
-    </div>
-  </div>
+        </table>
 
   {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
-    {{ $enrollments->appends(request()->query())->links() }}
+    {{ $rows->links() }}
   </div>
 
 </div>
