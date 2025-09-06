@@ -65,5 +65,12 @@ class Student extends Authenticatable implements MustVerifyEmail
         ->withTimestamps();
                     
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    
 }
     

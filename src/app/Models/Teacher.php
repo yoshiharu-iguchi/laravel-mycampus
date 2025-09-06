@@ -25,4 +25,8 @@ class Teacher extends Authenticatable
     public function subjects(){
         return $this->hasMany(Subject::class);
     }
+
+    public function attendances(){
+        return $this->hasMany(Attendance::class);
+    }
 }
