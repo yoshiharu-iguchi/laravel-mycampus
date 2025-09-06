@@ -22,8 +22,8 @@
   <div class="card">
     <div class="card-body">
       <dl class="row">
-        <dt class="col-sm-3">ID</dt>
-        <dd class="col-sm-9">{{ $student->id }}</dd>
+        <!-- <dt class="col-sm-3">ID</dt>
+        <dd class="col-sm-9">{{ $student->id }}</dd> -->
 
         <dt class="col-sm-3">氏名</dt>
         <dd class="col-sm-9">{{ $student->name }}</dd>

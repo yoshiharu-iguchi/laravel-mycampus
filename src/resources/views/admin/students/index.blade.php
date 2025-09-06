@@ -63,17 +63,17 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width: 90px;">ID</th>
+            <!-- <th style="width: 90px;">ID</th> -->
             <th>氏名</th>
             <th>学籍番号</th>
             <th>メールアドレス</th>
-            <th style="width: 120px;"></th>
+            <th style="width: 120px;">操作</th>
           </tr>
         </thead>
         <tbody>
         @forelse($students as $student)
           <tr>
-            <td>{{ $student->id }}</td>
+            <!-- <td>{{ $student->id }}</td> -->
             <td>{{ $student->name }}</td>
             <td>{{ $student->student_number }}</td>
             <td>{{ $student->email }}</td>
