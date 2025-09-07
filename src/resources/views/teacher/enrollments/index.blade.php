@@ -1,84 +1,175 @@
-<x-app-layout>
-  <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-      履修一覧（教員）
-    </h2>
-  </x-slot>
+{{-- resources/views/teacher/enrollments/index.blade.php --}}
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>履修一覧（教員）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {{-- Bootstrap（必要ならレイアウトへ移動可） --}}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container py-4">
 
-  <div class="py-6">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-      <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+  <h1 class="h4 mb-4">履修一覧（教員）</h1>
 
-        {{-- 検索フォーム --}}
-        <form method="GET" class="grid grid-cols-12 gap-3 mb-4">
-          <div class="col-span-12 md:col-span-5">
-            <select name="subject_id" class="border-gray-300 rounded-md w-full">
-              <option value="">科目を選択</option>
-              @foreach($subjects as $s)
-                <option value="{{ $s->id }}" @selected(request('subject_id')==$s->id)>
-                  {{ $s->name_ja ?? $s->name_en ?? '不明' }}
-                </option>
-              @endforeach
-            </select>
-          </div>
-          <div class="col-span-6 md:col-span-3">
-            <input type="number" name="year" value="{{ request('year') }}"
-                   class="border-gray-300 rounded-md w-full" placeholder="年度(YYYY)">
-          </div>
-          <div class="col-span-6 md:col-span-3">
-            <select name="term" class="border-gray-300 rounded-md w-full">
-              <option value="">学期</option>
-              @foreach(['前期','後期','通年'] as $t)
-                <option @selected(request('term')===$t)>{{ $t }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div class="col-span-12 md:col-span-1">
-            <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md w-full">
-              検索
-            </button>
-          </div>
-        </form>
+  {{-- フラッシュメッセージ／エラー --}}
+  @if(session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+  @endif
+  @if($errors->any())
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+      </ul>
+    </div>
+  @endif
 
-        {{-- 一覧 --}}
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-left">
-              <tr>
-                <th class="px-3 py-2">学生</th>
-                <th class="px-3 py-2">学籍番号</th>
-                <th class="px-3 py-2">科目</th>
-                <th class="px-3 py-2">年度</th>
-                <th class="px-3 py-2">学期</th>
-                <th class="px-3 py-2">状態</th>
-              </tr>
-            </thead>
-            <tbody>
-            @forelse($enrollments as $e)
-              <tr class="border-b">
-                <td class="px-3 py-2">{{ $e->student->name }}</td>
-                <td class="px-3 py-2">{{ $e->student->student_number }}</td>
-                <td class="px-3 py-2">{{ $e->subject->name_ja ?? $e->subject->name_en ?? '不明' }}</td>
-                <td class="px-3 py-2">{{ $e->year }}</td>
-                <td class="px-3 py-2">{{ $e->term }}</td>
-                <td class="px-3 py-2">{{ $e->status }}</td>
-              </tr>
-            @empty
-              <tr>
-                <td colspan="6" class="px-3 py-6 text-center text-gray-500">
-                  データがありません。
-                </td>
-              </tr>
-            @endforelse
-            </tbody>
-          </table>
+  {{-- 検索フォーム --}}
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="GET" action="{{ url()->current() }}" class="row g-2">
+        {{-- 科目 --}}
+        <div class="col-12 col-md-5">
+          <select name="subject_id" class="form-select">
+            <option value="">科目を選択</option>
+            @foreach($subjects as $s)
+              <option value="{{ $s->id }}" @selected((string)request('subject_id') === (string)$s->id)>
+                {{ $s->name_ja ?? $s->name_en ?? '不明' }}
+              </option>
+            @endforeach
+          </select>
         </div>
-
-        <div class="mt-4">
-          {{ $enrollments->links() }}
+        {{-- 年度 --}}
+        <div class="col-6 col-md-3">
+          <input type="number" name="year" value="{{ old('year', request('year')) }}"
+                 class="form-control" placeholder="年度(YYYY)">
         </div>
+        {{-- 学期 --}}
+        <div class="col-6 col-md-3">
+          <select name="term" class="form-select">
+            <option value="">学期</option>
+            @foreach(['前期','後期','通年'] as $t)
+              <option value="{{ $t }}" @selected(request('term')===$t)>{{ $t }}</option>
+            @endforeach
+          </select>
+        </div>
+        {{-- 操作 --}}
+        <div class="col-12 col-md-1 d-grid">
+          <button class="btn btn-primary">検索</button>
+        </div>
+      </form>
 
+      {{-- 選択中の条件（チップ表示） --}}
+      <div class="mt-3 small text-muted">
+        @php
+          $chips = [];
+          if(request('subject_id')){
+            $chosen = $subjects->firstWhere('id', (int)request('subject_id'));
+            $chips[] = '科目: '.($chosen->name_ja ?? $chosen->name_en ?? ('ID '.$chosen->id));
+          }
+          if(request('year')){ $chips[] = '年度: '.e(request('year')); }
+          if(request('term')){ $chips[] = '学期: '.e(request('term')); }
+        @endphp
+
+        @if(count($chips))
+          @foreach($chips as $c)
+            <span class="badge text-bg-secondary me-1">{{ $c }}</span>
+          @endforeach
+          <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary ms-1">リセット</a>
+        @else
+          条件未指定
+        @endif
       </div>
     </div>
   </div>
-</x-app-layout>
+
+  {{-- 件数サマリー --}}
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="small text-muted">
+      全 {{ number_format($total ?? $enrollments->total()) }} 件
+      @if($enrollments->count())
+        ／ 表示 {{ number_format($enrollments->firstItem()) }}–{{ number_format($enrollments->lastItem()) }} 件
+      @endif
+    </div>
+    <div>
+      {{-- 必要なら他ページへの導線をここに（例：出席簿やCSV出力など） --}}
+      {{-- <a href="{{ route('teacher.attendances.index') }}" class="btn btn-sm btn-outline-primary">出席簿へ</a> --}}
+    </div>
+  </div>
+
+  {{-- 結果テーブル --}}
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>学生</th>
+            <th>学籍番号</th>
+            <th>科目</th>
+            <th>年度</th>
+            <th>学期</th>
+            <th>状態</th>
+            <th style="width: 160px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+        @forelse($enrollments as $e)
+          @php
+            // 状態ラベル（必要に応じて調整）
+            $raw = $e->status ?? null;
+            $statusLabel = match($raw){
+              'active','registered' => '履修中',
+              'completed'           => '修了',
+              'dropped','canceled'  => '取消',
+              default               => ($raw ?? '—'),
+            };
+            $statusClass = match($statusLabel){
+              '履修中' => 'text-bg-success',
+              '修了'   => 'text-bg-primary',
+              '取消'   => 'text-bg-secondary',
+              default  => 'text-bg-light text-dark',
+            };
+          @endphp
+          <tr>
+            <td>{{ $e->student->name }}</td>
+            <td>{{ $e->student->student_number }}</td>
+            <td>{{ $e->subject->name_ja ?? $e->subject->name_en ?? '不明' }}</td>
+            <td>{{ $e->year ?? '—' }}</td>
+            <td>{{ $e->term ?? '—' }}</td>
+            <td>
+              <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
+            </td>
+            <td class="text-end">
+              {{-- 詳細ページなど必要に応じてリンクを配置 --}}
+              {{-- 例：学生詳細・科目詳細・履修詳細 --}}
+              {{-- <a href="{{ route('teacher.students.show',$e->student) }}" class="btn btn-sm btn-outline-secondary">学生</a> --}}
+              {{-- <a href="{{ route('teacher.subjects.show',$e->subject) }}" class="btn btn-sm btn-outline-secondary">科目</a> --}}
+              {{-- <a href="{{ route('teacher.enrollments.show',$e) }}" class="btn btn-sm btn-outline-primary">詳細</a> --}}
+            </td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              データがありません。
+            </td>
+          </tr>
+        @endforelse
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{-- ページネーション（検索クエリを引き継ぐ） --}}
+  <div class="mt-3">
+    {{ $enrollments
+        ->appends([
+          'subject_id' => request('subject_id'),
+          'year'       => request('year'),
+          'term'       => request('term'),
+        ])->links() }}
+  </div>
+
+</div>
+</body>
+</html>

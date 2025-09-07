@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->tinyInteger('status')
+            ->default(4)
+            ->comment('0=absent,1=present,2=late,3=excused,4=unrecorded')
+            ->change();
+            $table->string('note',255)->nullable()->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->string('status',20)->change();
+            $table->string('note',255)->nullable(false)->change();
+        });
+    }
+};

@@ -106,6 +106,11 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
     // 履修閲覧・管理機能(教員)
     Route::get('enrollments',[TeacherEnrollmentController::class,'index'])
         ->name('enrollments.index');
+
+    Route::get('attendances',[Teacher\AttendanceController::class,'index'])
+        ->name('attendances.index');
+    Route::post('attendances/bulk-update',[Teacher\AttendanceController::class,'bulkUpdate'])
+        ->name('attendances.bulkUpdate');
 });
 
 

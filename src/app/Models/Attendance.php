@@ -10,14 +10,20 @@ class Attendance extends Model
 {
     use HasFactory;
 
-    public const STATUSES = ['present','absent','late','excused'];
+    public const STATUS_ABSENT = 0;
+    public const STATUS_PRESENT = 1;
+    public const STATUS_LATE =2;
+    public const STATUS_EXCUSED = 3;
+    public const STATUS_UNRECORDED = 4;
 
     protected $fillable = ['student_id','subject_id','teacher_id','date','status','note','recorded_at'];
 
-    protected $casts = [
-        'date' => 'date',
-        'recorded_at' => 'datetime',
-    ];
+    protected $casts = ['date' => 'date','status' => 'integer', 'recorded_at' => 'datetime',];
+
+    public function getStatusLabelAttribute():string
+    {
+        return __('attendance.statuses.'.$this->status);
+    }
 
     public function student():BelongsTo
     {

@@ -66,7 +66,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width: 90px;">ID</th>
+            <!-- <th style="width: 90px;">ID</th> -->
             <th>科目コード</th>
             <th>科目名</th>
             <th>単位</th>
@@ -80,7 +80,7 @@
         <tbody>
         @forelse($subjects as $subject)
           <tr>
-            <td>{{ $subject->id }}</td>
+            <!-- <td>{{ $subject->id }}</td> -->
             <td>{{ $subject->subject_code }}</td>
             <td>{{ $subject->name_ja }}</td>
             <td>{{ $subject->credits }}</td>
