@@ -45,16 +45,18 @@ class AttendanceController extends Controller
             Attendance::firstOrCreate(
                 ['student_id' => $sid,'subject_id' => $subjectId,'date'=> $date],
                 [
-                    'teacher_id' => auth('teacher')->id(),
+                    'teacher_id' => $teacherId,
                     'status' => Attendance::STATUS_UNRECORDED,
                     'recorded_at' => null,
                 ]
                 );
         }
         $attendances = Attendance::with('student')
-            ->where('subject_id',$subjectId)
-            ->whereDate('date',$date)
-            ->orderBy('student_id')
+            ->join('students','students.id','=','attendances.student_id')
+            ->where('attendances.subject_id',$subjectId)
+            ->whereDate('attendances.date',$date)
+            ->orderBy('students.name')
+            ->select('attendances.*')
             ->get();
 
             return view('teacher.attendances.index',compact('subject','date','attendances','subjects'));

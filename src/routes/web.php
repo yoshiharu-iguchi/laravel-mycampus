@@ -111,6 +111,11 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
         ->name('attendances.index');
     Route::post('attendances/bulk-update',[Teacher\AttendanceController::class,'bulkUpdate'])
         ->name('attendances.bulkUpdate');
+
+    Route::get('grades',[Teacher\GradeController::class,'index'])
+        ->name('grades.index');
+    Route::post('grades/bulk-update',[Teacher\GradeController::class,'bulkUpdate'])
+        ->name('grades.bulkUpdate');
 });
 
 
