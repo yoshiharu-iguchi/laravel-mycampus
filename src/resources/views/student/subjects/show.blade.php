@@ -87,15 +87,31 @@
         <input type="hidden" name="year" value="{{ now()->year }}">
 
         <div class="col-auto">
-          <label for="term" class="col-form-label">学期</label>
-        </div>
-        <div class="col-auto">
-          <select id="term" name="term" class="form-select">
-            @foreach(['前期','後期','通年'] as $t)
-              <option value="{{ $t }}" @selected(($subject->term ?? '')===$t)>{{ $t }}</option>
-            @endforeach
-          </select>
-        </div>
+  <label for="term" class="col-form-label">学期</label>
+</div>
+<div class="col-auto">
+  @php
+    // 既存の値を安全に数値へ寄せる（編集/詳細ページでも落ちないように）
+    $subjectTermValue = null;
+    if ($subject->term instanceof \App\Enums\Term) {
+        $subjectTermValue = $subject->term->value;
+    } elseif (is_numeric($subject->term)) {
+        $subjectTermValue = (int) $subject->term;
+    } else {
+        $subjectTermValue = null; // 不明なら null
+    }
+    // old('term') 優先、なければ科目の既存値、さらに無ければ「通年」を既定値に
+    $currentTerm = (int) old('term', $subjectTermValue ?? \App\Enums\Term::FullYear->value);
+  @endphp
+
+  <select id="term" name="term" class="form-select">
+    @foreach(\App\Enums\Term::cases() as $t)
+      <option value="{{ $t->value }}" @selected($currentTerm === $t->value)>
+        {{ $t->label() }}
+      </option>
+    @endforeach
+  </select>
+</div>
         <div class="col-auto">
           <button class="btn btn-primary">履修登録する</button>
         </div>

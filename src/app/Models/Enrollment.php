@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\Term;
 use App\Enums\EnrollmentStatus;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use App\Models\Student;
-use App\Models\Subject;
+
+
 
 use function Laravel\Prompts\select;
 
@@ -28,13 +29,12 @@ class Enrollment extends Model
     protected function statusLabel():Attribute
     {
         return Attribute::get(fn ()=>
-        __('enrollment.status.'.$this->status->value)
-    );
+        $this->status?->label() ?? '');
     }
     protected function termLabel():Attribute
     {
         return Attribute::get(fn ()=>
-        __('enrollment.term.'.$this->term->value)
+        $this->term?->label() ?? ''
     );
     }
 

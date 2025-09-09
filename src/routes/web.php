@@ -59,11 +59,18 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
     Route::get('enrollments',[Student\EnrollmentController::class,'index'])->name('enrollments.index');
     Route::post('enrollments',[Student\EnrollmentController::class,'store'])->name('enrollments.store');
     Route::delete('enrollments/{enrollment}',[Student\EnrollmentController::class,'destroy'])->name('enrollments.destroy');
+
+    Route::get('progress',[Student\ProgressController::class,'index'])
+        ->name('progress.index');
 });
 
 //保護者ルート
 Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:guardian'],function(){
     Route::get('home',[Guardian\HomeController::class,'index'])->name('home');
+
+    Route::get('progress',[Guardian\ProgressController::class,'index'])
+        ->name('progress.index');
+
 });
 // トークン付き保護者登録ルートを追加(ログイン不要)
 Route::prefix('guardians')->name('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function(){

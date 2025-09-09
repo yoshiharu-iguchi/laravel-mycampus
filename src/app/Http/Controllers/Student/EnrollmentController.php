@@ -9,6 +9,8 @@ use App\Models\Subject;
 use App\Models\Student; // ← 追加（型コメント用）
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Enums\Term;
+use App\Enums\EnrollmentStatus;
 
 class EnrollmentController extends Controller
 {
@@ -31,8 +33,9 @@ class EnrollmentController extends Controller
         $student = auth('student')->user();
 
         $subject = Subject::findOrFail($request->integer('subject_id'));
-        $year    = (int) $request->input('year');
-        $term    = $request->input('term');
+        $year    = (int) $request->integer('year');
+        $raw = $request->input('term');
+        $term    = is_numeric($raw) ? Term::from((int)$raw) : Term::fromLabel((string)$raw);
 
         $enrollment = Enrollment::firstOrCreate(
             [
@@ -42,13 +45,13 @@ class EnrollmentController extends Controller
                 'term'       => $term,
             ],
             [
-                'status'        => 'registered',
+                'status'        => EnrollmentStatus::Registered,
                 'registered_at' => now(),
             ]
         );
-        $message = $enrollment->wasRecentlyCreated ? '履修登録しました':'既に履修済みです';
+        
 
-        return back()->with('status',$message);
+        return back()->with('status', $enrollment->wasRecentlyCreated ? '履修登録しました' : '既に履修済みです');
             
     }
 
