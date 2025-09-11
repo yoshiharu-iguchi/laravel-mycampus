@@ -126,5 +126,13 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
 });
 
 
+use App\Enums\TransitProvider;
+
+Route::get('/dev/ekispert', function () {
+    $when = new DateTimeImmutable(date('Y-m-d').' 08:00');
+    $options = TransitProvider::Ekispert->estimateMany('新宿', '横浜', $when, 3);
+    return response()->json($options);
+});
+
 
     
