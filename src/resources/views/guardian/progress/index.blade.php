@@ -15,7 +15,7 @@
   <div class="small text-muted mb-3">
     学生：{{ $student->name }}（学籍番号：{{ $student->student_number ?? '—' }}）
   </div>
-
+gi
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
@@ -42,8 +42,8 @@
             <th class="text-center">欠席</th>
             <th class="text-center">公欠</th>
             <th class="text-center">未記録</th>
-            <th class="text-center">最新点</th>
-            <th class="text-center">平均点</th>
+            <th class="text-center">評定</th>
+            <!-- <th class="text-center">平均点</th> -->
           </tr>
         </thead>
         <tbody>
@@ -62,9 +62,9 @@
             <td class="text-center">
               {{ is_null($r['latestScore']) ? '—' : $r['latestScore'] }}
             </td>
-            <td class="text-center">
+            <!-- <td class="text-center">
               {{ is_null($r['avgScore']) ? '—' : $r['avgScore'] }}
-            </td>
+            </td> -->
           </tr>
         @empty
           <tr>
