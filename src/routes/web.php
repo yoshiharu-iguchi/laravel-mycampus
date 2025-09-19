@@ -10,7 +10,8 @@ use App\Http\Controllers\Guardian\RegisterWithTokenController;
 use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
 use App\Http\Controllers\Admin\StudentInviteController;
-use Monolog\Handler\RotatingFileHandler;
+use App\Http\Controllers\TransitController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -127,6 +128,8 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
 
 
 use App\Enums\TransitProvider;
+
+Route::get('/routes', [TransitController::class, 'index'])->name('routes.index');
 
 Route::get('/dev/ekispert', function () {
     $when = new DateTimeImmutable(date('Y-m-d').' 08:00');
