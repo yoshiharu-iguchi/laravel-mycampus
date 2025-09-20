@@ -63,6 +63,8 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
 
     Route::get('progress',[Student\ProgressController::class,'index'])
         ->name('progress.index');
+
+    
 });
 
 //保護者ルート
@@ -130,6 +132,7 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
 use App\Enums\TransitProvider;
 
 Route::get('/routes', [TransitController::class, 'index'])->name('routes.index');
+
 
 Route::get('/dev/ekispert', function () {
     $when = new DateTimeImmutable(date('Y-m-d').' 08:00');
