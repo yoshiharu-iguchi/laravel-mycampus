@@ -13,17 +13,20 @@ use App\Models\Enrollment;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\GuardianInviteMail;
 use App\Models\Guardian;
+use App\Models\Subject;
+use App\Models\Attendance;
+use App\Models\TransportRequest;
 
 
 class Student extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens,HasFactory,Notifiable;
 
-    protected $fillable = ['name','student_number','password','email','address','guardian_registration_token',];
+    protected $fillable = ['name','student_number','password','email','address',];
 
     protected $hidden = ['password','remember_token','guardian_registration_token',];
 
-    protected $casts = ['email_verified_at' => 'datetime','guardian_registered_at' => 'datetime',];
+    protected $casts = ['email_verified_at' => 'datetime','guardian_registered_at' => 'datetime','password' => 'hashed',];
 
     // 追加：モデルイベント 新規作成(insert)直前に未セットなら64桁トークン自動発行します。
 
@@ -37,7 +40,7 @@ class Student extends Authenticatable implements MustVerifyEmail
             }
         });
         static::created(function (Student $student) {
-            Mail::to($student->email)->queue(new GuardianInviteMail($student));
+            Mail::to($student->email)->send(new GuardianInviteMail($student));
         });
     }
     public static function issueGuardianToken(int $days = 30): array
@@ -69,6 +72,11 @@ class Student extends Authenticatable implements MustVerifyEmail
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function transportRequests()
+    {
+        return $this->hasMany(TransportRequest::class);
     }
 
     

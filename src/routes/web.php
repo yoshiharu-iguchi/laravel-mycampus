@@ -5,12 +5,16 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
+use App\Enums\TransitProvider;
 
 use App\Http\Controllers\Guardian\RegisterWithTokenController;
 use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
 use App\Http\Controllers\Admin\StudentInviteController;
 use App\Http\Controllers\TransitController;
+use App\Http\Controllers\Student\TransportRequestController;
+use App\Http\Controllers\Admin\TransportRequestAdminController;
+
 
 
 /*
@@ -64,6 +68,10 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
     Route::get('progress',[Student\ProgressController::class,'index'])
         ->name('progress.index');
 
+    // 学生の交通費申請
+    Route::get('transport-request/create',[Student\TransportRequestController::class,'create'])->name('tr.create');
+    Route::post('transport-requests',[Student\TransportRequestController::class,'store'])->name('tr.store');
+
     
 });
 
@@ -107,6 +115,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     // 学生に招待メールを再送(POST)
     Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])
         ->name('students.invite');
+
+    // 管理者の審査
+    Route::get('transport-requests',[Admin\TransportRequestAdminController::class,'index'])->name('tr.index');
+    Route::patch('transport-requests/{transport_request}/approve',[Admin\TransportRequestAdminController::class,'approve'])->name('tr.approve');
+    Route::patch('transport-requests/{tr}/reject',[Admin\TransportRequestAdminController::class,'reject'])->name('tr.reject');
 });
 
 // 教員ルート
@@ -129,7 +142,7 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
 });
 
 
-use App\Enums\TransitProvider;
+
 
 Route::get('/routes', [TransitController::class, 'index'])->name('routes.index');
 
