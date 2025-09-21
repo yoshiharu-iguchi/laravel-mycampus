@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RosterStudentSeeder::class,
             SubjectSeeder::class,
             DemoEnrollmentSeeder::class,
+            FacilitySeeder::class,
         ]);
     }
 }
