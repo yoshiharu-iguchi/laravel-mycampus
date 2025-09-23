@@ -50,7 +50,7 @@ class TransitController extends Controller
             'searchType'  => 'departure',
             'date'        => $date,
             'time'        => $time,
-            'answerCount' => 5,
+            'count'       => 5,
             'sort'        => 'time',
         ];
 
@@ -111,7 +111,7 @@ class TransitController extends Controller
 
             // ごく稀に DepatureState（綴り誤り）パターンがあるので保険
             $depIso = data_get($firstLine, 'DepartureState.Datetime.text')
-                   ?: data_get($firstLine, 'DepatureState.Datetime.text');
+                   ?: data_get($firstLine, 'DepartureState.Datetime.text');
             $arrIso = data_get($lastLine,  'ArrivalState.Datetime.text');
 
             // 複数ラインを結合表示

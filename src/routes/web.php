@@ -71,8 +71,8 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
     // 学生の交通費申請
     Route::get('transport-request/create',[Student\TransportRequestController::class,'create'])->name('tr.create');
     Route::post('transport-requests',[Student\TransportRequestController::class,'store'])->name('tr.store');
-
-    
+    Route::post('transport-requests/search',[Student\TransportRequestController::class,'search'])->name('tr.search');
+  
 });
 
 //保護者ルート

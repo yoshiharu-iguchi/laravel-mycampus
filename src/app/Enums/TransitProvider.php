@@ -51,14 +51,14 @@ enum TransitProvider:string
 
         $json = Http::baseUrl('https://api.ekispert.jp')
             ->acceptJson()
-            ->get('/v1/json/search/course/extreme', [
-                'key'         => $key,
-                'viaList'     => $viaList,                          // ★ 重要
+            ->get('/v1/json/search/course/light', [
+                'key'         => config('services.ekispert.key'),
+                'from'        => $from,                          
+                'to'          => $to,
+                'searchType' => 'departure',
                 'date'        => $when->format('Ymd'),
                 'time'        => $when->format('Hi'),
-                'answerCount' => max(1, min($count, 10)),
-                'sort'        => 'price',                           // 'time' や 'transfer' も可
-                // 'searchType' => 'plain',                         // 必要なら
+                'count' => $count,
             ])
             ->throw()
             ->json();
