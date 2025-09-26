@@ -3,174 +3,67 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class EkispertClient
 {
-    /**
-     * 経路候補を返す（フリープラン対応：/search/course/light）
-     *
-     * @param string $fromName  入力駅名（例: "川越", "大宮(埼玉県)" など）
-     * @param string $toName    入力駅名（例: "新宿" など）
-     * @param \DateTimeInterface $when 検索日時
-     * @param int $limit        返す最大件数（light は件数指定不可なのであとで切り詰め）
-     */
-    public function search(string $fromName, string $toName, \DateTimeInterface $when, int $limit = 3): array
+    private string $base = 'https://api.ekispert.jp/v1/json';
+
+    public function resourceUrl(string $fromName, string $toName, \DateTimeInterface $when): ?string
     {
         $key = config('services.ekispert.key');
-        if (!$key) {
-            throw new \RuntimeException('Ekispert APIキーが未設定です');
-        }
+        if (!$key) return null;
 
-        // 1) 駅名→駅コード（station/light）
-        $fromCode = $this->resolveStationCode($fromName, $key);
-        $toCode   = $this->resolveStationCode($toName, $key);
-
-        if (!$fromCode || !$toCode) {
-            \Log::error('Ekispert station code resolve failed', ['from' => $fromName, 'to' => $toName, 'fromCode' => $fromCode, 'toCode' => $toCode]);
-            throw new \RuntimeException('駅名の解決に失敗しました（from/to）');
-        }
-
-        // 2) コース検索（light）※ viaList ではなく from / to を使う
-        $params = [
+        $common = [
             'key'        => $key,
-            'from'       => (string) $fromCode,
-            'to'         => (string) $toCode,
-            'searchType' => 'departure',
             'date'       => $when->format('Ymd'),
             'time'       => $when->format('Hi'),
+            'searchType' => 'departure',
         ];
-        \Log::warning('Ekispert course/light params', ['params' => $params]);
 
-        $resp = Http::baseUrl('https://api.ekispert.jp')
-            ->acceptJson()
-            ->get('/v1/json/search/course/light', $params);
+        // 1) 駅名でURL生成を試す（推奨ルート）
+        $res = Http::acceptJson()->get("{$this->base}/search/course/light", array_merge($common, [
+            'from' => $fromName,
+            'to'   => $toName,
+        ]));
 
-        if (!$resp->ok()) {
-            \Log::warning('Ekispert course/light failed', [
-                'status'  => $resp->status(),
-                'payload' => $params,
-                'body'    => $resp->body(),
-                'json'    => $resp->json(),
-            ]);
-            throw new \RuntimeException('HTTP request returned status code '.$resp->status());
+        $url = data_get($res->json(), 'ResultSet.ResourceURI');
+        if ($url) return $this->normalizeUrl($url);
+
+        // 2) 取れない場合は駅コードに解決して再試行（曖昧名対策）
+        $fromCode = $this->firstStationCode($fromName, $key);
+        $toCode   = $this->firstStationCode($toName, $key);
+
+        if ($fromCode && $toCode) {
+            $res2 = Http::acceptJson()->get("{$this->base}/search/course/light", array_merge($common, [
+                'from' => $fromCode,
+                'to'   => $toCode,
+            ]));
+            $url2 = data_get($res2->json(), 'ResultSet.ResourceURI');
+            if ($url2) return $this->normalizeUrl($url2);
         }
 
-        $json = $resp->json();
-        if ($err = data_get($json, 'ResultSet.Error')) {
-            \Log::warning('Ekispert course/light api error', ['error' => $err]);
-            throw new \RuntimeException('API error: '.json_encode($err, JSON_UNESCAPED_UNICODE));
-        }
-
-        $courses = data_get($json, 'ResultSet.Course', []);
-        if (!is_array($courses)) $courses = [$courses];
-
-        // light は1件構成も多いので保険で配列化後に間引き
-        $courses = array_values(array_filter($courses));
-        if (!$courses) return [];
-
-        $courses = array_slice($courses, 0, max(1, $limit));
-
-        $out = [];
-        foreach ($courses as $c) {
-            $points = $this->toList(data_get($c, 'Route.Point'));
-            $lines  = $this->toList(data_get($c, 'Route.Line'));
-            if (!$points || !$lines) continue;
-
-            $firstPoint = $points[0];
-            $lastPoint  = $points[count($points)-1];
-
-            $firstLine  = $lines[0];
-            $lastLine   = $lines[count($lines)-1];
-
-            // 出発・到着のISO時刻（light でも Depart/ArrivalState.Datetime.text が来る）
-            $depIso = data_get($firstLine, 'DepartureState.Datetime.text');
-            $arrIso = data_get($lastLine,  'ArrivalState.Datetime.text');
-
-            $depTime = $depIso ? Carbon::parse($depIso)->format('H:i') : null;
-            $arrTime = $arrIso ? Carbon::parse($arrIso)->format('H:i') : null;
-
-            // 運賃（selected の Fare / Charge を採用。無ければ 0）
-            $fare = 0; $seatFee = 0;
-            foreach ((array) data_get($c, 'Price', []) as $p) {
-                if (data_get($p, 'kind') === 'Fare'   && data_get($p, 'selected') === 'true') $fare    = (int) data_get($p, 'Oneway', 0);
-                if (data_get($p, 'kind') === 'Charge' && data_get($p, 'selected') === 'true') $seatFee = (int) data_get($p, 'Oneway', 0);
-            }
-
-            $title = trim((data_get($firstPoint, 'Station.Name') ?? $fromName).'→'.(data_get($lastPoint, 'Station.Name') ?? $toName));
-
-            $out[] = [
-                'title'      => $title,
-                'url'        => null,                  // light は直リンクURLを返さないので null
-                'total_yen'  => max(0, $fare + $seatFee),
-                'dep_time'   => $depTime,
-                'arr_time'   => $arrTime,
-            ];
-        }
-        \Log::info('Ekispert course/light ok', ['count' => count($out)]);
-        return $out;
+        return null; // ここまで来たら未取得
     }
 
-    /**
-     * station/light で駅コードを取る（forward → partial の順）
-     */
-    private function resolveStationCode(string $name, string $key): ?string
+    private function firstStationCode(string $name, string $key): ?string
     {
-        $name = $this->normalize($name);
+        $r = Http::acceptJson()->get("{$this->base}/station/light", [
+            'key'  => $key,
+            'name' => $name,
+            'limit'=> 1, // 先頭だけ使う
+        ]);
+        // 先頭PointのStation.code を拾う（配列/非配列どちらもケア）
+        return data_get($r->json(), 'ResultSet.Point.0.Station.code')
+            ?? data_get($r->json(), 'ResultSet.Point.Station.code');
+    }
 
-        foreach (['forward','partial'] as $match) {
-            $params = [
-                'key'           => $key,
-                'name'          => $name,
-                'nameMatchType' => $match,
-                'type'          => 'train',
-            ];
-            \Log::warning('Ekispert station/light try', ['params' => $params]);
-
-            $r = Http::baseUrl('https://api.ekispert.jp')->acceptJson()
-                ->get('/v1/json/station/light', $params);
-
-            if (!$r->ok()) {
-                \Log::warning('Ekispert station/light http', ['status' => $r->status(), 'body' => $r->body()]);
-                continue;
-            }
-
-            $points = $this->collectPoints($r->json());
-            if (!$points) continue;
-
-            // 先頭候補を採用（必要があれば都道府県一致などのスコアリングを追加）
-            $code = data_get($points[0] ?? [], 'Station.code');
-            if ($code) return (string) $code;
+    private function normalizeUrl(string $url): string
+    {
+        if (str_starts_with($url, '/')) {
+            $url = 'https://roote.ekispert.net'.$url;
         }
-        return null;
-    }
-
-    /**
-     * JSON から Point 配列を抽出（1件のみ時の単体オブジェクトにも対応）
-     */
-    private function collectPoints(array $json): array
-    {
-        foreach (['ResultSet.Point', 'ResultSet.Points.Point', 'Point'] as $p) {
-            $v = data_get($json, $p);
-            if ($v) return is_array($v) ? (array_is_list($v) ? $v : [$v]) : [$v];
-        }
-        return [];
-    }
-
-    private function toList($v): array
-    {
-        if ($v === null) return [];
-        if (is_array($v)) return array_is_list($v) ? $v : [$v];
-        return [$v];
-    }
-
-    private function normalize(string $s): string
-    {
-        $s = mb_convert_kana($s, 'asKV');           // 全角→半角など
-        $s = str_replace("\xE3\x80\x80", ' ', $s);  // 全角空白→半角
-        return trim($s);
+        $url = str_replace('roote.ekispert.jp', 'roote.ekispert.net', $url);
+        $url = preg_replace('#^http://#', 'https://', $url);
+        return $url;
     }
 }
-
-

@@ -3,61 +3,44 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\TransportRequest;
 use App\Enums\TransportRequestStatus;
+use Illuminate\Http\Request;
 
 class TransportRequestAdminController extends Controller
 {
-    /**
-     * 一覧表示
-     */
-    public function index(Request $req)
+    public function index()
     {
-        $q = TransportRequest::with(['student','facility'])->latest();
-
-        if ($s = $req->input('status')) {
-            $q->where('status', $s);
-        }
-        if ($k = $req->input('keyword')) {
-            $q->where(function($w) use ($k) {
-                $w->where('from_station_name','like',"%$k%")
-                  ->orWhere('to_station_name','like',"%$k%")
-                  ->orWhereHas('student', fn($qq)=>$qq->where('name','like',"%$k%"))
-                  ->orWhereHas('facility', fn($qq)=>$qq->where('name','like',"%$k%"));
-            });
-        }
-        /** @var \Illuminate\Contracts\Pagination\LengthAwarePaginator $items */
-        $items = $q->paginate(20)->withQueryString();
-        return view('admin.transport_requests.index', compact('items'));
+        $requests = TransportRequest::with('student')->latest()->paginate(20);
+        return view('admin.transport_requests.index', compact('requests'));
     }
 
-    /**
-     * 承認処理
-     */
-    public function approve(TransportRequest $tr)
+    public function approve(TransportRequest $tr, Request $request)
     {
         $tr->update([
-        'status'      => TransportRequestStatus::Approved, // ← Enum
-        'approved_by' => auth('admin')->id(),
-        'approved_at' => now(),
-    ]);
-    $tr->student?->notify(new \App\Notifications\TransportRequestResultToStudent($tr));
-    return back()->with('status','承認しました');
+            'status'      => TransportRequestStatus::Approved,
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
+        ]);
+        return back()->with('ok', '承認しました');
     }
 
-    /**
-     * 却下処理
-     */
-    public function reject(TransportRequest $tr, \Illuminate\Http\Request $req)
-{
-    $tr->update([
-        'status'      => TransportRequestStatus::Rejected, // ← Enum
-        'approved_by' => auth('admin')->id(),
-        'approved_at' => now(),
-        'admin_note'  => $req->input('admin_note'),
-    ]);
-    $tr->student?->notify(new \App\Notifications\TransportRequestResultToStudent($tr));
-    return back()->with('status','却下しました');
-}
+    public function reject(TransportRequest $tr, Request $request)
+    {
+        $tr->update([
+            'status'      => TransportRequestStatus::Rejected,
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
+        ]);
+        return back()->with('ok', '却下しました');
+    }
+
+    private function mergeNote(?string $old, ?string $add): ?string
+    {
+        $add = trim((string)$add);
+        if ($add === '') return $old;
+        return $old ? ($old . "\n---\n" . $add) : $add;
+    }
 }

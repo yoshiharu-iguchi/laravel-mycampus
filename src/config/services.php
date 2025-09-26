@@ -31,6 +31,6 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'ekispert' => ['key' => env('EKISPERT_API_KEY')],
+    'ekispert' => ['key' => env('EKISPERT_KEY')],
 
 ];

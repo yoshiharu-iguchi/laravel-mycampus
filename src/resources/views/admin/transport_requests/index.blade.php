@@ -25,11 +25,11 @@
   {{-- 検索フォーム（状態＋キーワード） --}}
   <div class="card mb-3">
     <div class="card-body">
-      <form method="GET" action="{{ url()->current() }}" class="row g-2 align-items-end">
+      <form method="GET" action="{{ route('admin.tr.index') }}" class="row g-2 align-items-end">
         <div class="col-sm-4 col-md-3">
           <label class="form-label mb-1">状態</label>
+          @php $st = request('status'); @endphp
           <select name="status" class="form-select">
-            @php $st = request('status'); @endphp
             <option value="">すべて</option>
             <option value="pending"  @selected($st==='pending')>申請中</option>
             <option value="approved" @selected($st==='approved')>承認</option>
@@ -49,7 +49,7 @@
           <button type="submit" class="btn btn-primary">検索</button>
         </div>
         <div class="col-sm-auto">
-          <a href="{{ url()->current() }}" class="btn btn-outline-secondary">リセット</a>
+          <a href="{{ route('admin.tr.index') }}" class="btn btn-outline-secondary">リセット</a>
         </div>
       </form>
 
@@ -65,9 +65,9 @@
   {{-- 件数サマリー --}}
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="small text-muted">
-      全 {{ number_format($items->total()) }} 件
-      @if($items->count())
-        ／ 表示 {{ number_format($items->firstItem()) }}–{{ number_format($items->lastItem()) }} 件
+      全 {{ number_format($requests->total()) }} 件
+      @if($requests->count())
+        ／ 表示 {{ number_format($requests->firstItem()) }}–{{ number_format($requests->lastItem()) }} 件
       @endif
     </div>
   </div>
@@ -93,7 +93,7 @@
           </tr>
         </thead>
         <tbody>
-        @forelse($items as $it)
+        @forelse($requests as $it)
           <tr>
             <td>{{ $it->id }}</td>
             <td>
@@ -106,8 +106,10 @@
               <span class="text-muted">→</span>
               {{ $it->to_station_name }}
             </td>
-            <td>{{ \Illuminate\Support\Carbon::parse($it->travel_date)->format('Y/m/d') }}</td>
-            <td class="text-end">{{ number_format((int)($it->total_yen ?? 0)) }}</td>
+            <td>
+              {{ optional($it->travel_date ? \Illuminate\Support\Carbon::parse($it->travel_date) : null)->format('Y/m/d') }}
+            </td>
+            <td class="text-end">{{ $it->total_yen !== null ? number_format((int)$it->total_yen) : '-' }}</td>
             <td>
               <span class="badge
                 @if($it->status === TRS::Pending) text-bg-warning
@@ -115,12 +117,15 @@
                 @else text-bg-danger
                 @endif
               ">
-                {{-- Enum の日本語ラベル（label() 実装済み前提） --}}
                 {{ $it->status instanceof \App\Enums\TransportRequestStatus ? $it->status->label() : (string)$it->status }}
               </span>
             </td>
             <td class="text-end">
-              <a href="{{ $it->search_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">結果URL</a>
+              @if($it->search_url)
+                <a href="{{ $it->search_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">結果URL</a>
+              @else
+                <span class="text-muted">URLなし</span>
+              @endif
 
               @if($it->status === TRS::Pending)
                 {{-- 承認 --}}
@@ -141,7 +146,7 @@
               @else
                 @if($it->approved_at)
                   <span class="text-muted small ms-2">
-                    {{ \Illuminate\Support\Carbon::parse($it->approved_at)->format('Y/m/d H:i') }}
+                    {{ optional($it->approved_at ? \Illuminate\Support\Carbon::parse($it->approved_at) : null)->format('Y/m/d H:i') }}
                   </span>
                 @endif
               @endif
@@ -161,7 +166,7 @@
 
   {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
-    {{ $items->appends([
+    {{ $requests->appends([
       'status'  => request('status'),
       'keyword' => request('keyword'),
     ])->links() }}

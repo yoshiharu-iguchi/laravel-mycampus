@@ -14,8 +14,7 @@ use App\Http\Controllers\Admin\StudentInviteController;
 use App\Http\Controllers\TransitController;
 use App\Http\Controllers\Student\TransportRequestController;
 use App\Http\Controllers\Admin\TransportRequestAdminController;
-
-
+use App\Models\TransportRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,10 +68,9 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
         ->name('progress.index');
 
     // 学生の交通費申請
-    Route::get('transport-request/create',[Student\TransportRequestController::class,'create'])->name('tr.create');
-    Route::post('transport-requests',[Student\TransportRequestController::class,'store'])->name('tr.store');
-    Route::post('transport-requests/search',[Student\TransportRequestController::class,'search'])->name('tr.search');
-  
+    Route::get('transport-requests/create', [TransportRequestController::class, 'create'])->name('tr.create');
+    Route::post('transport-requests/search',[TransportRequestController::class,'search'])->name('tr.search');
+    Route::post('transport-requests', [TransportRequestController::class, 'store'])->name('tr.store');
 });
 
 //保護者ルート
@@ -116,10 +114,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::post('students/{student}/invite',[Admin\StudentInviteController::class,'send'])
         ->name('students.invite');
 
-    // 管理者の審査
-    Route::get('transport-requests',[Admin\TransportRequestAdminController::class,'index'])->name('tr.index');
-    Route::patch('transport-requests/{transport_request}/approve',[Admin\TransportRequestAdminController::class,'approve'])->name('tr.approve');
-    Route::patch('transport-requests/{tr}/reject',[Admin\TransportRequestAdminController::class,'reject'])->name('tr.reject');
+    // 管理者交通費承認
+    Route::get('transport-requests',[TransportRequestAdminController::class,'index'])->name('tr.index');
+    Route::patch('transport-requests/{tr}/approve',[TransportRequestAdminController::class,'approve'])->name('tr.approve');
+    Route::patch('transport-requests/{tr}/reject',[TransportRequestAdminController::class,'reject'])->name('tr.reject');
 });
 
 // 教員ルート
@@ -139,18 +137,6 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
         ->name('grades.index');
     Route::post('grades/bulk-update',[Teacher\GradeController::class,'bulkUpdate'])
         ->name('grades.bulkUpdate');
-});
-
-
-
-
-Route::get('/routes', [TransitController::class, 'index'])->name('routes.index');
-
-
-Route::get('/dev/ekispert', function () {
-    $when = new DateTimeImmutable(date('Y-m-d').' 08:00');
-    $options = TransitProvider::Ekispert->estimateMany('新宿', '横浜', $when, 3);
-    return response()->json($options);
 });
 
 
