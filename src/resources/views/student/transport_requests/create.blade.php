@@ -2,225 +2,277 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>交通費申請</title>
+  <title>交通費申請（学生）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap（必要ならレイアウトへ移動可） -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <style>
-    /* URLの省略表示に使う共通クラス */
-    .url-clip { max-width: 420px; }
-    @media (max-width: 576px) { .url-clip { max-width: 220px; } }
-  </style>
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h1 class="h5 mb-3">交通費申請</h1>
 
+  <h1 class="h4 mb-4">交通費申請（学生）</h1>
+
+  {{-- フラッシュメッセージ --}}
   @if ($errors->any())
     <div class="alert alert-danger">
-      <ul class="mb-0">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+      <ul class="mb-0">
+        @foreach ($errors->all() as $e)
+          <li>{{ $e }}</li>
+        @endforeach
+      </ul>
     </div>
   @endif
-
   @if (session('success'))
-    <div class="alert alert-success">
-      {{ session('success') }}
-      @if (session('saved_url'))
-        <div class="small mt-2 d-flex align-items-center gap-2 flex-wrap">
-          <span class="text-muted">保存したURL：</span>
-          <a class="d-inline-block text-truncate url-clip"
-             href="{{ session('saved_url') }}" target="_blank" rel="noopener">
-            {{ str(session('saved_url'))->limit(60) }}
-          </a>
-          <button class="btn btn-sm btn-outline-secondary"
-                  type="button"
-                  onclick='navigator.clipboard.writeText(@json(session("saved_url")))'>
-            コピー
-          </button>
-        </div>
-      @endif
-    </div>
+    <div class="alert alert-success">{{ session('success') }}</div>
   @endif
 
   <div class="row g-4">
-    <div class="col-12 col-lg-8">
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="h6 mb-3">① 経路検索（駅すぱあとURLを作る）</div>
+    {{-- 左：検索＋申請フォーム --}}
+    <div class="col-lg-8">
 
-          <form method="POST" action="{{ route('student.tr.search') }}" class="row g-2">
+      {{-- 上段：駅すぱあと検索フォーム --}}
+      <div class="card">
+        <div class="card-header">① 駅すぱあとで検索URL作成</div>
+        <div class="card-body">
+          <form class="row g-3" method="POST" action="{{ route('student.tr.search') }}">
             @csrf
-            <div class="col-12 col-md-4">
-              <label class="form-label small">自宅最寄り駅</label>
-              <input name="from_station_name" class="form-control" value="{{ old('from_station_name') }}" placeholder="例）大宮(埼玉県)" required>
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label small">実習先最寄り駅</label>
-              <input name="to_station_name" class="form-control" value="{{ old('to_station_name') }}" placeholder="例）新宿" required>
-            </div>
-            <div class="col-6 col-md-2">
-              <label class="form-label small">日付</label>
-              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date', now()->toDateString()) }}" required>
-            </div>
-            <div class="col-6 col-md-2">
-              <label class="form-label small">時刻</label>
-              <input type="time" name="time" class="form-control" value="{{ old('time', '08:00') }}">
-            </div>
+
+            {{-- 実習施設プルダウン（選ぶと到着駅に最寄駅が入る） --}}
             <div class="col-12">
-              <button class="btn btn-primary">検索（URLを作る）</button>
+              <label for="facility_id" class="form-label small mb-1">実習施設（選ぶと到着駅に最寄駅が入ります）</label>
+              <select name="facility_id" id="facility_id" class="form-select">
+                <option value="">（未選択）</option>
+                @foreach($facilities as $f)
+                  <option
+                    value="{{ $f->id }}"
+                    data-station="{{ $f->nearest_station }}"
+                    @selected(old('facility_id') == $f->id)
+                  >
+                    {{ $f->name }}（最寄：{{ $f->nearest_station }}）
+                  </option>
+                @endforeach
+              </select>
+              @error('facility_id') <div class="text-danger small">{{ $message }}</div> @enderror
+            </div>
+
+            {{-- 出発駅 --}}
+            <div class="col-md-6">
+              <label class="form-label small mb-1">出発駅</label>
+              <input type="text" name="from_station_name" class="form-control"
+                     value="{{ old('from_station_name') }}" placeholder="例）大宮(埼玉県)">
+              @error('from_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
+            </div>
+
+            {{-- 到着駅（施設選択で自動入力／ボタンで強制コピー） --}}
+            <div class="col-md-6">
+              <label class="form-label small mb-1">到着駅</label>
+              <div class="input-group">
+                <input type="text" id="to_station_name" name="to_station_name" class="form-control"
+                       value="{{ old('to_station_name') }}" placeholder="例）新宿">
+                <button type="button" id="copyNearestBtn" class="btn btn-outline-secondary">最寄駅を入れる</button>
+              </div>
+              @error('to_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
+            </div>
+
+            {{-- 日付・時刻 --}}
+            <div class="col-md-6">
+              <label class="form-label small mb-1">日付</label>
+              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date') }}">
+              @error('travel_date') <div class="text-danger small">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">時刻（任意）</label>
+              <input type="time" name="time" class="form-control" value="{{ old('time') }}">
+              @error('time') <div class="text-danger small">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+              <button class="btn btn-primary">検索URL作成</button>
+              <a href="{{ route('student.tr.create', ['clear' => 1]) }}" class="btn btn-outline-secondary">プレビューを消す</a>
             </div>
           </form>
 
-          @php
-            $viewerUrl = $viewerUrl ?? session('viewer_url');
-            if (!empty($viewerUrl)) {
-                if (str_starts_with($viewerUrl, '/')) {
-                    $viewerUrl = 'https://roote.ekispert.net' . $viewerUrl;
-                }
-                $viewerUrl = str_replace('roote.ekispert.jp', 'roote.ekispert.net', $viewerUrl);
-                $viewerUrl = preg_replace('#^http://#', 'https://', $viewerUrl);
-            }
-          @endphp
-
+          {{-- 検索結果URLのプレビュー --}}
           @if(!empty($viewerUrl))
             <div class="alert alert-info mt-3">
-              <div class="fw-bold small mb-1">駅すぱあと結果ページ</div>
-              <a href="{{ $viewerUrl }}" target="_blank" rel="noopener">ここを開いて確認</a>
-              <div class="small mt-2 d-flex align-items-center gap-2 flex-wrap">
-                <code class="d-inline-block text-truncate url-clip">{{ str($viewerUrl)->limit(80) }}</code>
-                <button class="btn btn-sm btn-outline-secondary"
-                        type="button"
-                        onclick='navigator.clipboard.writeText(@json($viewerUrl))'>
-                  コピー
-                </button>
-              </div>
+              検索結果URL：
+              <a href="{{ $viewerUrl }}" target="_blank" rel="noopener">新しいタブで開く</a>
             </div>
           @endif
         </div>
       </div>
 
-      <div class="card">
+      {{-- 下段：申請フォーム --}}
+      <div class="card mt-4">
+        <div class="card-header">② この内容で申請する</div>
         <div class="card-body">
-          <div class="h6 mb-3">② URLを見ながら、手入力で申請</div>
+          <form class="row g-3" method="POST" action="{{ route('student.tr.store') }}">
+  @csrf
 
-          <form method="POST" action="{{ route('student.tr.store') }}" class="row g-2">
-            @csrf
-            <div class="col-12 col-md-6">
-              <label class="form-label small">自宅最寄り駅</label>
-              <input name="from_station_name" class="form-control" value="{{ old('from_station_name') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label small">実習先最寄り駅</label>
-              <input name="to_station_name" class="form-control" value="{{ old('to_station_name') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label small">日付</label>
-              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date', now()->toDateString()) }}" required>
-            </div>
+  {{-- 実習施設（任意） --}}
+  <div class="col-12">
+    <label for="facility_id_store" class="form-label small mb-1">実習施設（任意）</label>
+    <select name="facility_id" id="facility_id_store" class="form-select">
+      <option value="">（未選択）</option>
+      @foreach($facilities as $f)
+        <option value="{{ $f->id }}" @selected(old('facility_id') == $f->id)>{{ $f->name }}</option>
+      @endforeach
+    </select>
+    @error('facility_id') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
 
-            <div class="col-12">
-              <label class="form-label small">駅すぱあと結果URL</label>
-              <input type="url" name="search_url" class="form-control"
-                     value="{{ old('search_url', $viewerUrl ?? '') }}"
-                     placeholder="https://roote.ekispert.net/result?..." required>
-            </div>
+  {{-- 出発駅・到着駅 --}}
+  <div class="col-md-6">
+    <label class="form-label small mb-1">出発駅</label>
+    <input type="text" name="from_station_name" class="form-control" value="{{ old('from_station_name') }}">
+    @error('from_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
 
-            <div class="col-12">
-              <label class="form-label small">ルート（手入力 / 例：赤羽-池袋-新宿 JR 30分 片道240円）</label>
-              <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note') }}</textarea>
-              <div class="form-text">※簡単のため一時的に「管理メモ」欄に保存します。</div>
-            </div>
+  <div class="col-md-6">
+    <label class="form-label small mb-1">到着駅</label>
+    <input type="text" name="to_station_name" class="form-control" value="{{ old('to_station_name') }}">
+    @error('to_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
 
-            <div class="col-4 col-md-2">
-              <label class="form-label small">出発</label>
-              <input name="dep_time" class="form-control" placeholder="08:10" value="{{ old('dep_time') }}">
-            </div>
-            <div class="col-4 col-md-2">
-              <label class="form-label small">到着</label>
-              <input name="arr_time" class="form-control" placeholder="08:45" value="{{ old('arr_time') }}">
-            </div>
-            <div class="col-4 col-md-2">
-              <label class="form-label small">運賃(円)</label>
-              <input type="number" name="fare_yen" class="form-control" placeholder="240" value="{{ old('fare_yen') }}">
-            </div>
-            <div class="col-4 col-md-2">
-              <label class="form-label small">指定席(円)</label>
-              <input type="number" name="seat_fee_yen" class="form-control" placeholder="0" value="{{ old('seat_fee_yen') }}">
-            </div>
-            <div class="col-4 col-md-2">
-              <label class="form-label small">合計(円)</label>
-              <input type="number" name="total_yen" class="form-control" placeholder="240" value="{{ old('total_yen') }}">
-            </div>
+  {{-- 日付・運賃 --}}
+  <div class="col-md-6">
+    <label class="form-label small mb-1">日付</label>
+    <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date') }}">
+    @error('travel_date') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
 
-            <div class="col-12">
-              <button class="btn btn-success">この内容で申請する</button>
-            </div>
-          </form>
+  <div class="col-md-6">
+    <label class="form-label small mb-1">運賃（円）</label>
+    <input type="number" name="fare_yen" class="form-control" value="{{ old('fare_yen') }}">
+    @error('fare_yen') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
+  {{-- 経路メモ（任意・管理者にも表示されます） --}}
+<div class="col-12">
+  <label class="form-label small mb-1">経路メモ（任意）</label>
+  <textarea
+    name="admin_note"
+    class="form-control"
+    rows="3"
+    placeholder="例）行き：大宮→（埼京線）→新宿。帰りは湘南新宿ライン予定。IC利用。">
+    {{ old('admin_note') }}
+  </textarea>
+  <div class="form-text">
+    管理者にも表示されます。※却下理由入力などで上書きされる場合があります。
+  </div>
+  @error('admin_note') <div class="text-danger small">{{ $message }}</div> @enderror
+</div>
+
+  {{-- 検索結果URL（必須） --}}
+  <div class="col-12">
+    <label class="form-label small mb-1">検索結果URL（必須）</label>
+    <input type="url" name="search_url" class="form-control"
+           value="{{ old('search_url', $viewerUrl) }}"
+           placeholder="駅すぱあと検索結果ページのURLを貼り付け">
+    @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
+    @if(session('saved_url'))
+      <div class="form-text">保存したURL：<a href="{{ session('saved_url') }}" target="_blank" rel="noopener">開く</a></div>
+    @endif
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-success">この内容で申請する</button>
+  </div>
+</form>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-lg-4">
+    {{-- 右：最近の申請 --}}
+    <div class="col-lg-4">
       <div class="card">
+        <div class="card-header">直近の申請（10件）</div>
         <div class="card-body">
-          <div class="h6 mb-3">③ あなたの申請状況</div>
 
-          @if(isset($myRequests) && $myRequests->count())
-            <div class="list-group">
-              @foreach($myRequests as $r)
-                @php
-                  $status = $r->status->name ?? $r->status ?? 'Pending';
-                  $badge  = match (strtolower($status)) {
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    'pending' => 'secondary',
-                    default => 'secondary',
+          @php use App\Enums\TransportRequestStatus as TRS; @endphp
+
+          @forelse($myRequests as $tr)
+            <div class="mb-3">
+              <div class="small text-muted">{{ $tr->created_at?->format('Y-m-d H:i') }}</div>
+
+              <div>{{ $tr->from_station_name }} <span class="text-muted">→</span> {{ $tr->to_station_name }}</div>
+
+              <div class="small">
+                日付：
+                {{ optional($tr->travel_date ? \Illuminate\Support\Carbon::parse($tr->travel_date) : null)->format('Y/m/d') }}
+              </div>
+
+              @php
+                // クラス決定（Enum キャスト無くても動くようにフォールバック）
+                $cls = 'text-bg-secondary';
+                if ($tr->status instanceof \App\Enums\TransportRequestStatus) {
+                  if ($tr->status === TRS::Pending)      $cls = 'text-bg-warning';
+                  elseif ($tr->status === TRS::Approved) $cls = 'text-bg-success';
+                  elseif ($tr->status === TRS::Rejected) $cls = 'text-bg-danger';
+                } else {
+                  switch ((string)$tr->status) {
+                    case 'pending':  $cls = 'text-bg-warning'; break;
+                    case 'approved': $cls = 'text-bg-success'; break;
+                    case 'rejected': $cls = 'text-bg-danger';  break;
+                  }
+                }
+
+                // ラベル決定
+                if ($tr->status instanceof \App\Enums\TransportRequestStatus) {
+                  $label = $tr->status->label();
+                } else {
+                  $label = match ((string)$tr->status) {
+                    'pending'  => '申請中',
+                    'approved' => '承認',
+                    'rejected' => '却下',
+                    default    => '未設定',
                   };
-                @endphp
+                }
+              @endphp
 
-                <div class="list-group-item">
-                  <div class="d-flex justify-content-between">
-                    <div>
-                      <div class="small text-muted">{{ $r->created_at?->format('Y-m-d H:i') }}</div>
-                      <div class="fw-bold">{{ $r->from_station_name }} → {{ $r->to_station_name }}</div>
-                      <div class="small">
-                        出発 {{ $r->dep_time ?? '-' }} / 到着 {{ $r->arr_time ?? '-' }} /
-                        合計 {{ $r->total_yen ? '¥'.number_format($r->total_yen) : '-' }}
-                      </div>
+              <div class="small d-flex align-items-center gap-2">
+                <span>合計：{{ number_format((int)($tr->total_yen ?? 0)) }}円</span>
+                <span class="badge {{ $cls }}">{{ $label }}</span>
+              </div>
 
-                      @if($r->admin_note)
-                        <div class="small text-muted mt-1" style="white-space:pre-wrap">{{ $r->admin_note }}</div>
-                      @endif
-
-                      @if($r->search_url)
-                        <div class="small mt-1 d-flex align-items-center gap-2 flex-wrap">
-                          <a href="{{ $r->search_url }}" target="_blank" rel="noopener">駅すぱあとURLを開く</a>
-                          <span class="text-muted">（</span>
-                          <span class="d-inline-block text-truncate url-clip">
-                            {{ str($r->search_url)->limit(40) }}
-                          </span>
-                          <span class="text-muted">）</span>
-                          <button class="btn btn-sm btn-outline-secondary"
-                                  type="button"
-                                  onclick='navigator.clipboard.writeText(@json($r->search_url))'>
-                            コピー
-                          </button>
-                        </div>
-                      @endif
-                    </div>
-                    <span class="badge bg-{{ $badge }} align-self-start">{{ ucfirst($status) }}</span>
-                  </div>
+              @if($tr->search_url)
+                <div class="small">
+                  <a href="{{ $tr->search_url }}" target="_blank" rel="noopener">検索結果URL</a>
                 </div>
-              @endforeach
-            </div>
-          @else
-            <div class="text-muted">まだ申請はありません。</div>
-          @endif
+              @endif
 
+              <hr>
+            </div>
+          @empty
+            <div class="text-muted">まだ申請はありません。</div>
+          @endforelse
         </div>
       </div>
     </div>
   </div>
 </div>
+
+{{-- 施設選択 → 到着駅に最寄駅を入れる（シンプルJS） --}}
+<script>
+  (function(){
+    const sel = document.getElementById('facility_id');
+    const to  = document.getElementById('to_station_name');
+    const btn = document.getElementById('copyNearestBtn');
+
+    function fillToStation(force=false){
+      const opt = sel?.selectedOptions?.[0];
+      const station = opt?.dataset?.station || '';
+      if (!station) return;
+      if (force || !to.value) to.value = station; // 手入力があるときは強制上書きしない
+    }
+
+    sel?.addEventListener('change', () => fillToStation(false));
+    btn?.addEventListener('click',  () => fillToStation(true));
+
+    // 初期表示時、到着駅が空で施設が選ばれていたら入れておく
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sel && to && !to.value && sel.value) fillToStation(false);
+    });
+  })();
+</script>
 </body>
 </html>
