@@ -4,6 +4,22 @@ services:
     build: ./infra/php
     volumes:
       - ./src:/data
+    depends_on:
+      - db
+      - mailhog
+    environment:
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_ENCRYPTION: null
+      MAIL_FROM_ADDRESS: "no-reply@example.test"
+      MAIL_FROM_NAME: "MyCampus"
+      QUEUE_CONNECTION: sync
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
   web:
     image: nginx:1.20-alpine
     ports:
@@ -12,6 +28,8 @@ services:
       - ./src:/data
       - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf
     working_dir: /data
+    depends_on:
+      - app
   
   db:
     build: ./infra/mysql
