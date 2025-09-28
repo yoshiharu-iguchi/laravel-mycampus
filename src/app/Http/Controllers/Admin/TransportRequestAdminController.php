@@ -19,11 +19,12 @@ class TransportRequestAdminController extends Controller
 
     public function approve(TransportRequest $tr, Request $request)
     {
+        $reason = $request->input('admin_note',$request->input('note'));
         $tr->update([
             'status'      => TransportRequestStatus::Approved,
             'approved_by' => auth('admin')->id(),
             'approved_at' => now(),
-            'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
+            'admin_note'  => $this->mergeNote($tr->admin_note, $reason),
         ]);
 
         $tr->student?->notify(new TransportRequestApproved($tr));
@@ -32,11 +33,15 @@ class TransportRequestAdminController extends Controller
 
     public function reject(TransportRequest $tr, Request $request)
     {
+        $data = $request->validate([
+            'admin_note' => ['required','string','max:500'],
+        ]);
+        $reason=$data['admin_note'] ?? $request->input('note');
         $tr->update([
             'status'      => TransportRequestStatus::Rejected,
             'approved_by' => auth('admin')->id(),
             'approved_at' => now(),
-            'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
+            'admin_note'  => $this->mergeNote($tr->admin_note, $reason),
         ]);
 
         $tr->student?->notify(new TransportRequestRejected($tr));

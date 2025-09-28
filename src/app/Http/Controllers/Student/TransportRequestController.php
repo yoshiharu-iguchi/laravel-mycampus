@@ -73,20 +73,21 @@ class TransportRequestController extends Controller
                 ->withInput($data)
                 ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
         }
-
-        $time = $data['time'] ?: '08:00';
-        $when = Carbon::parse($data['travel_date'].' '.$time);
+        $time = $data['arr_time'] ?? $request->input('time') ?? '08:00';
+        if(strlen($time) === 4){$time='0'.$time;}
+        if(strlen($time)=== 5){/* OK */}
+        $when = Carbon::parse("{$data['travel_date']} {$time}",'Asia/Tokyo');
 
         try {
             // フリープラン：結果ページURLのみ取得
             $viewerUrl = $ekispert->resourceUrl(
                 $data['from_station_name'],
                 $data['to_station_name'],
-                $when
-            );
+                $when,true);//到着検索
+            
 
             // 通常セッション保存 → リロードや再検索でも保持・上書き
-            session()->put('viewer_url', $viewerUrl);
+            session()->put('route_memo_default', sprintf('%s 到着 %s / %s → %s', Carbon::parse($data['travel_date'])->toDateString(), $time, $data['from_station_name'], $data['to_station_name']));
 
             return redirect()
                 ->route('student.tr.create')
@@ -114,16 +115,19 @@ class TransportRequestController extends Controller
         $data = $request->validate([
             'facility_id'        => ['nullable','exists:facilities,id'],
             'from_station_name'  => ['required','string','max:191'],
-            'to_station_name'    => ['nullable','string','max:191'],
-            'travel_date'        => ['required','date'],
-            'dep_time'           => ['nullable','regex:/^\d{2}:\d{2}$/'],
-            'arr_time'           => ['nullable','regex:/^\d{2}:\d{2}$/'],
+            'to_station_name'    => ['nullable','string','max:100'],
             'fare_yen'           => ['nullable','integer','min:0'],
+            'travel_date'        => ['required','date'],
+            'arr_time'           => ['nullable','date_format:H:i'],
             'seat_fee_yen'       => ['nullable','integer','min:0'],
             'total_yen'          => ['nullable','integer','min:0'],
-            'admin_note'         => ['nullable','string','max:500'],
-            'search_url'         => ['required','url','max:2000'], // ← 要件の核
+            'search_url'         => ['required','url','max:2000'], 
+            'route_memo' => ['nullable','string','max:1000'],
         ]);
+
+        if (isset($data['arr_time']) && strlen($data['arr_time']) === 5) {
+            $data['arr_time'] .= ':00';
+        }
 
         // 到着駅の補完（施設が選択されていて到着駅が空なら、施設の最寄駅を入れる）
         if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
@@ -149,7 +153,7 @@ class TransportRequestController extends Controller
         Notification::send($admins,new TransportRequestSubmitted($tr));
 
         return redirect()
-            ->route('tr.create')
+            ->route('student.tr.create')
             ->with('success', '申請を保存し、管理者へ通知しました。')
             ->with('saved_url', $data['search_url']);
     }

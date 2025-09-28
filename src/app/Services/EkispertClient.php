@@ -8,7 +8,7 @@ class EkispertClient
 {
     private string $base = 'https://api.ekispert.jp/v1/json';
 
-    public function resourceUrl(string $fromName, string $toName, \DateTimeInterface $when): ?string
+    public function resourceUrl(string $fromName, string $toName, \DateTimeInterface $when,bool $byArrival = true): ?string
     {
         $key = config('services.ekispert.key');
         if (!$key) return null;
@@ -17,7 +17,7 @@ class EkispertClient
             'key'        => $key,
             'date'       => $when->format('Ymd'),
             'time'       => $when->format('Hi'),
-            'searchType' => 'departure',
+            'searchType' => $byArrival ? 'arrival':'departure',
         ];
 
         // 1) 駅名でURL生成を試す（推奨ルート）
@@ -42,7 +42,7 @@ class EkispertClient
             if ($url2) return $this->normalizeUrl($url2);
         }
 
-        return null; // ここまで来たら未取得
+        return null; // 未取得
     }
 
     private function firstStationCode(string $name, string $key): ?string
@@ -50,7 +50,7 @@ class EkispertClient
         $r = Http::acceptJson()->get("{$this->base}/station/light", [
             'key'  => $key,
             'name' => $name,
-            'limit'=> 1, // 先頭だけ使う
+            'limit'=> 1, 
         ]);
         // 先頭PointのStation.code を拾う（配列/非配列どちらもケア）
         return data_get($r->json(), 'ResultSet.Point.0.Station.code')

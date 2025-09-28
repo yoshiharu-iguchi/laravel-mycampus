@@ -6,6 +6,7 @@ use App\Models\TransportRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class TransportRequestApproved extends Notification
@@ -35,15 +36,12 @@ class TransportRequestApproved extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $tr = $this->tr;
+        $msg = (new MailMessage)
+            ->subject('【交通費申請】承認されました');
+        $link = Route::has('student.tr.index') ? route('student.tr.index') : url('/student/transport-requests');
+        $msg->action('申請一覧へ',$link);
+        return $msg;
 
-        return (new MailMessage)
-                    ->subject('【交通費申請】承認されました')
-                    ->greeting(($tr->student->name ?? '学生').'さん')
-                    ->line('あなたの交通費申請が承認されました。')
-                    ->line("経路:{$tr->from_station_name} → {$tr->to_station_name}")
-                    ->action('申請内容を確認',route('student.tr.create'))
-                    ->line("検索URL:{$tr->search_url}");
     }
 
     /**

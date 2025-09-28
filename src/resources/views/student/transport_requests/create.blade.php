@@ -74,16 +74,17 @@
               @error('to_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
-            {{-- 日付・時刻 --}}
-            <div class="col-md-6">
-              <label class="form-label small mb-1">日付</label>
-              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date') }}">
-              @error('travel_date') <div class="text-danger small">{{ $message }}</div> @enderror
+            {{-- 日付:default=今日(Asia/Tokyo) --}}
+            <div class="mb-3">
+              <label class="form-label">日付</label>
+              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date',now()->timezone('Asia/Tokyo')->toDateString()) }}">
             </div>
-            <div class="col-md-6">
-              <label class="form-label small mb-1">時刻（任意）</label>
-              <input type="time" name="time" class="form-control" value="{{ old('time') }}">
-              @error('time') <div class="text-danger small">{{ $message }}</div> @enderror
+
+            {{-- 到着時刻:default=08:00(編集可能) --}}
+            <div class="mb-3">
+              <label class="form-label">到着時刻</label>
+              <input type="time" name="arr_time" class="form-control" value="{{ old('arr_time','08:00') }}">
+              <div class="form-text">到着時刻は8:00に設定しています。必要に応じて変更して下さい。</div>
             </div>
 
             <div class="col-12 d-flex gap-2">
@@ -148,18 +149,15 @@
   </div>
   {{-- 経路メモ（任意・管理者にも表示されます） --}}
 <div class="col-12">
-  <label class="form-label small mb-1">経路メモ（任意）</label>
-  <textarea
-    name="admin_note"
-    class="form-control"
-    rows="3"
-    placeholder="例）行き：大宮→（埼京線）→新宿。帰りは湘南新宿ライン予定。IC利用。">
-    {{ old('admin_note') }}
-  </textarea>
-  <div class="form-text">
-    管理者にも表示されます。※却下理由入力などで上書きされる場合があります。
-  </div>
-  @error('admin_note') <div class="text-danger small">{{ $message }}</div> @enderror
+  <label class="form-label small mb-1">経路メモ ※到着時刻 / 線路名 /乗り換え駅 /所要時間を記載</label>
+<textarea name="route_note"
+          class="form-control"
+          rows="3"
+          placeholder="{{ session('route_memo_default', '到着 08:00 / 埼京線 / 大宮(埼玉県) → 赤羽 → 新宿 / 30分') }}">{{ old('route_note') }}</textarea>
+<div class="form-text">
+  ※却下時は、その理由を管理者がメールに記載します。
+</div>
+  @error('route_note') <div class="text-danger small">{{ $message }}</div> @enderror
 </div>
 
   {{-- 検索結果URL（必須） --}}
