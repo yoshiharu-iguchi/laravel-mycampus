@@ -130,7 +130,8 @@
               @if($it->status === TRS::Pending)
                 {{-- 承認 --}}
                 <form method="post" action="{{ route('admin.tr.approve',$it) }}" class="d-inline">
-                  @csrf @method('PATCH')
+                  @csrf 
+                  @method('PATCH')
                   <button type="submit" class="btn btn-sm btn-primary">承認</button>
                 </form>
 

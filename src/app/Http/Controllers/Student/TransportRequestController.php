@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Models\Admin;
+use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -9,6 +11,8 @@ use Carbon\Carbon;
 use App\Models\Facility;
 use App\Models\TransportRequest;
 use App\Services\EkispertClient;
+use App\Notifications\TransportRequestSubmitted;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 class TransportRequestController extends Controller
 {
@@ -139,11 +143,14 @@ class TransportRequestController extends Controller
         $data['student_id']   = auth('student')->id();   // 学生IDを紐づけ
         $data['seat_fee_yen'] = $data['seat_fee_yen'] ?? 0; // 未入力は0円で保存
 
-        TransportRequest::create($data);
+        $tr = TransportRequest::create($data);
+
+        $admins = Admin::query()->get();
+        Notification::send($admins,new TransportRequestSubmitted($tr));
 
         return redirect()
-            ->route('student.tr.create')
-            ->with('success', '申請を保存しました。管理者が確認します。')
+            ->route('tr.create')
+            ->with('success', '申請を保存し、管理者へ通知しました。')
             ->with('saved_url', $data['search_url']);
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\TransportRequest;
 use App\Enums\TransportRequestStatus;
+use App\Notifications\TransportRequestApproved;
+use App\Notifications\TransportRequestRejected; 
 use Illuminate\Http\Request;
 
 class TransportRequestAdminController extends Controller
@@ -23,7 +25,9 @@ class TransportRequestAdminController extends Controller
             'approved_at' => now(),
             'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
         ]);
-        return back()->with('ok', '承認しました');
+
+        $tr->student?->notify(new TransportRequestApproved($tr));
+        return back()->with('status', '承認し、学生へ通知しました。');
     }
 
     public function reject(TransportRequest $tr, Request $request)
@@ -34,7 +38,9 @@ class TransportRequestAdminController extends Controller
             'approved_at' => now(),
             'admin_note'  => $this->mergeNote($tr->admin_note, $request->input('note')),
         ]);
-        return back()->with('ok', '却下しました');
+
+        $tr->student?->notify(new TransportRequestRejected($tr));
+        return back()->with('status', '却下し、学生へ通知しました。');
     }
 
     private function mergeNote(?string $old, ?string $add): ?string
