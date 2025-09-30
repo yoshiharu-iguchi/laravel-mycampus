@@ -1,36 +1,66 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>@yield('title', 'MyCampus')</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {{-- CDN派：そのままBootstrap --}}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  {{-- Vite派なら上を消して @vite(['resources/css/app.css','resources/js/app.js']) に差し替え --}}
+</head>
+<body class="bg-light">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url('/') }}">MyCampus</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        @auth('student')
+          <li class="nav-item"><a class="nav-link" href="{{ route('student.home') }}">学生ホーム</a></li>
+          @if (Route::has('student.tr.create'))
++            <li class="nav-item"><a class="nav-link" href="{{ route('student.tr.create') }}">交通費申請</a></li>
++          @endif
+        @endauth
+        @auth('teacher')
+          <li class="nav-item"><a class="nav-link" href="{{ route('teacher.home') }}">教員ホーム</a></li>
+        @endauth
+        @auth('admin')
+          <li class="nav-item"><a class="nav-link" href="{{ route('admin.tr.index') }}">申請一覧</a></li>
+        @endauth
+      </ul>
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+      {{-- 認証状態の簡易表示（ログイン/ログアウトは各実装に合わせて調整） --}}
+      <ul class="navbar-nav">
+        @php $loggedIn = auth('student')->check() || auth('teacher')->check() || auth('admin')->check(); @endphp
+        @if(!$loggedIn)
+          <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">ログイン</a></li>
+        @else
+          <li class="nav-item"><span class="navbar-text">ようこそ</span></li>
+        @endif
+      </ul>
+    </div>
+  </div>
+</nav>
 
-            <!-- Page Heading -->
-            @if (isset($header))
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endif
+<main class="container py-4">
+  {{-- フラッシュ/エラー共通枠 --}}
+  @if (session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+  @endif
+  @if ($errors->any())
+    <div class="alert alert-danger">
+      <ul class="mb-0">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+    </div>
+  @endif
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </body>
+  @yield('content')
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+@stack('scripts')
+</body>
 </html>

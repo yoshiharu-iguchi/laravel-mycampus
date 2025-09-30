@@ -1,45 +1,28 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>交通費申請（学生）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap（必要ならレイアウトへ移動可） -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
 
-  <h1 class="h4 mb-4">交通費申請（学生）</h1>
-
-  {{-- フラッシュメッセージ --}}
-  @if ($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach ($errors->all() as $e)
-          <li>{{ $e }}</li>
-        @endforeach
-      </ul>
-    </div>
-  @endif
-  @if (session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-  @endif
+@extends('layouts.app')
+@section('title','交通費申請ページ')
+@section('content')
+  <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
+  @php
+   $vu = ($viewerUrl ?? null)
+        ?? session('viewerUrl')
+        ?? session('viewer_url')
+        ?? old('search_url')
+  @endphp
 
   <div class="row g-4">
-    {{-- 左：検索＋申請フォーム --}}
+    {{-- 左：検索+申請フォーム --}}
     <div class="col-lg-8">
-
-      {{-- 上段：駅すぱあと検索フォーム --}}
+      {{-- 上段:駅すぱあと検索フォーム --}}
       <div class="card">
-        <div class="card-header">① 駅すぱあとで検索URL作成</div>
-        <div class="card-body">
+        <div class="card-header">① 経路検索フォーム</div>
+          <div class="card-body">
           <form class="row g-3" method="POST" action="{{ route('student.tr.search') }}">
             @csrf
 
             {{-- 実習施設プルダウン（選ぶと到着駅に最寄駅が入る） --}}
             <div class="col-12">
-              <label for="facility_id" class="form-label small mb-1">実習施設（選ぶと到着駅に最寄駅が入ります）</label>
+              <label for="facility_id" class="form-label small mb-1">実習施設(最寄駅)</label>
               <select name="facility_id" id="facility_id" class="form-select">
                 <option value="">（未選択）</option>
                 @foreach($facilities as $f)
@@ -48,7 +31,7 @@
                     data-station="{{ $f->nearest_station }}"
                     @selected(old('facility_id') == $f->id)
                   >
-                    {{ $f->name }}（最寄：{{ $f->nearest_station }}）
+                    {{ $f->name }}（最寄駅：{{ $f->nearest_station }}）
                   </option>
                 @endforeach
               </select>
@@ -93,11 +76,13 @@
             </div>
           </form>
 
+          
+
           {{-- 検索結果URLのプレビュー --}}
-          @if(!empty($viewerUrl))
+          @if(!empty($vu))
             <div class="alert alert-info mt-3">
               検索結果URL：
-              <a href="{{ $viewerUrl }}" target="_blank" rel="noopener">新しいタブで開く</a>
+              <a href="{{ $vu }}" target="_blank" rel="noopener">駅すぱあとを開く（別タブ）</a>
             </div>
           @endif
         </div>
@@ -105,10 +90,10 @@
 
       {{-- 下段：申請フォーム --}}
       <div class="card mt-4">
-        <div class="card-header">② この内容で申請する</div>
+        <div class="card-header">② 申請フォーム</div>
         <div class="card-body">
           <form class="row g-3" method="POST" action="{{ route('student.tr.store') }}">
-  @csrf
+      @csrf
 
   {{-- 実習施設（任意） --}}
   <div class="col-12">
@@ -141,30 +126,31 @@
     <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date') }}">
     @error('travel_date') <div class="text-danger small">{{ $message }}</div> @enderror
   </div>
-
   <div class="col-md-6">
-    <label class="form-label small mb-1">運賃（円）</label>
-    <input type="number" name="fare_yen" class="form-control" value="{{ old('fare_yen') }}">
-    @error('fare_yen') <div class="text-danger small">{{ $message }}</div> @enderror
-  </div>
+   <label class="form-label small mb-1">片道 金額（円）</label>
+   <input type="number" name="fare_yen" class="form-control" value="{{ old('fare_yen') }}" min="0" step="1" inputmode="numeric" placeholder="例）450">
+   @error('fare_yen') <div class="text-danger small">{{ $message }}</div> @enderror
+ <div class="form-text">通学定期は対象外。片道の実費を整数で入力してください。</div>
+ </div>
+
   {{-- 経路メモ（任意・管理者にも表示されます） --}}
-<div class="col-12">
-  <label class="form-label small mb-1">経路メモ ※到着時刻 / 線路名 /乗り換え駅 /所要時間を記載</label>
-<textarea name="route_note"
-          class="form-control"
-          rows="3"
-          placeholder="{{ session('route_memo_default', '到着 08:00 / 埼京線 / 大宮(埼玉県) → 赤羽 → 新宿 / 30分') }}">{{ old('route_note') }}</textarea>
-<div class="form-text">
-  ※却下時は、その理由を管理者がメールに記載します。
-</div>
-  @error('route_note') <div class="text-danger small">{{ $message }}</div> @enderror
-</div>
+  <div class="col-12">
+    <label class="form-label small mb-1">経路メモ（必須）</label>
+    <textarea
+        name="route_memo"
+        class="form-control"
+        rows="3"
+        placeholder="{{ session('route_memo_default', '例）埼京線／大宮(埼玉県)→ 赤羽 → 新宿（乗換1回）所要時間:30分') }}">{{ old('route_memo') }}</textarea>
+      <div class="form-text">線路名・乗換え駅・所要時間など詳細に書いてください。</div>
+        @error('route_memo') <div class="text-danger small">{{ $message }}</div> @enderror
+  </div>
+
 
   {{-- 検索結果URL（必須） --}}
   <div class="col-12">
     <label class="form-label small mb-1">検索結果URL（必須）</label>
     <input type="url" name="search_url" class="form-control"
-           value="{{ old('search_url', $viewerUrl) }}"
+           value="{{ old('search_url') !== null ? old('search_url') : $vu}}"
            placeholder="駅すぱあと検索結果ページのURLを貼り付け">
     @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
     @if(session('saved_url'))
@@ -228,9 +214,17 @@
               @endphp
 
               <div class="small d-flex align-items-center gap-2">
-                <span>合計：{{ number_format((int)($tr->total_yen ?? 0)) }}円</span>
                 <span class="badge {{ $cls }}">{{ $label }}</span>
               </div>
+              @if(!is_null($tr->fare_yen))
+                <div class="small">片道: {{ number_format((int)$tr->fare_yen) }}円</div>
+              @endif
+              @if(!empty($tr->route_memo))
+                <div class="small text-muted mt-1">
+                メモ：{{ \Illuminate\Support\Str::limit($tr->route_memo, 60) }}               
+                </div>
+              @endif
+
 
               @if($tr->search_url)
                 <div class="small">
@@ -249,6 +243,10 @@
   </div>
 </div>
 
+
+@endsection
+
+@push('scripts')
 {{-- 施設選択 → 到着駅に最寄駅を入れる（シンプルJS） --}}
 <script>
   (function(){
@@ -256,14 +254,24 @@
     const to  = document.getElementById('to_station_name');
     const btn = document.getElementById('copyNearestBtn');
 
+    function extractNearest(opt){
+      //1)data-stationを最優先
+      let s = opt?.dataset?.station || '';
+      if (s) return s.trim();
+      //2)保険:表示テキストから「最寄駅:◯◯を抜き出す
+      const m = (opt?.textContent || '').match(/最寄駅[：:]\s*([^）\)]+)/);
+      return m ? m[1].trim():'';
+    }
+    
     function fillToStation(force=false){
       const opt = sel?.selectedOptions?.[0];
-      const station = opt?.dataset?.station || '';
+      const station = extractNearest(opt);
+    
       if (!station) return;
       if (force || !to.value) to.value = station; // 手入力があるときは強制上書きしない
     }
 
-    sel?.addEventListener('change', () => fillToStation(false));
+    sel?.addEventListener('change', () => fillToStation(true));
     btn?.addEventListener('click',  () => fillToStation(true));
 
     // 初期表示時、到着駅が空で施設が選ばれていたら入れておく
@@ -272,5 +280,4 @@
     });
   })();
 </script>
-</body>
-</html>
+@endpush

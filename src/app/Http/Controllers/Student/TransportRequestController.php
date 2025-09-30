@@ -56,7 +56,7 @@ class TransportRequestController extends Controller
             'from_station_name' => ['required','string','max:191'],    // 例: 大宮(埼玉県)
             'to_station_name'   => ['nullable','string','max:191'],    // 例: 新宿（未入力なら施設から補完）
             'travel_date'       => ['required','date'],                 // 例: 2025-09-26
-            'time'              => ['nullable','regex:/^\d{2}:\d{2}$/'],// 例: 08:00
+            'arr_time'          => ['nullable','regex:/^\d{2}:\d{2}$/'],// 例: 08:00
         ]);
 
         // 到着駅の補完（施設が選択されていて到着駅が空なら、施設の最寄駅を入れる）
@@ -73,7 +73,7 @@ class TransportRequestController extends Controller
                 ->withInput($data)
                 ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
         }
-        $time = $data['arr_time'] ?? $request->input('time') ?? '08:00';
+        $time = $data['arr_time'] ?? '08:00';
         if(strlen($time) === 4){$time='0'.$time;}
         if(strlen($time)=== 5){/* OK */}
         $when = Carbon::parse("{$data['travel_date']} {$time}",'Asia/Tokyo');
@@ -87,11 +87,16 @@ class TransportRequestController extends Controller
             
 
             // 通常セッション保存 → リロードや再検索でも保持・上書き
-            session()->put('route_memo_default', sprintf('%s 到着 %s / %s → %s', Carbon::parse($data['travel_date'])->toDateString(), $time, $data['from_station_name'], $data['to_station_name']));
+            session()->put('viewer_url',$viewerUrl);
+            session()->put('viewerUrl',$viewerUrl);
+
+            $flashInput = $data;
+            $flashInput['search_url'] = $viewerUrl;
 
             return redirect()
                 ->route('student.tr.create')
-                ->withInput($data);
+                ->with('viewer_url',$viewerUrl)
+                ->withInput($flashInput);
 
         } catch (\Throwable $e) {
             Log::error('Ekispert search error', [
@@ -154,7 +159,7 @@ class TransportRequestController extends Controller
 
         return redirect()
             ->route('student.tr.create')
-            ->with('success', '申請を保存し、管理者へ通知しました。')
+            ->with('success', '申請を管理者へ送信しました。')
             ->with('saved_url', $data['search_url']);
     }
 }
