@@ -157,9 +157,11 @@ class TransportRequestController extends Controller
         $admins = Admin::query()->get();
         Notification::send($admins,new TransportRequestSubmitted($tr));
 
+        // 申請後はプレビュー用のURL等をクリア(次画面を空に)
+        session()->forget(['viewer_url','viewerUrl','route_memo_default']);
         return redirect()
             ->route('student.tr.create')
-            ->with('success', '申請を管理者へ送信しました。')
-            ->with('saved_url', $data['search_url']);
+            ->with('status', '申請を管理者へ送信しました。');
+            // ->with('saved_url', $data['search_url']);
     }
 }

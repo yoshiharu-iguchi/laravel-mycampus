@@ -153,9 +153,9 @@
            value="{{ old('search_url') !== null ? old('search_url') : $vu}}"
            placeholder="駅すぱあと検索結果ページのURLを貼り付け">
     @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
-    @if(session('saved_url'))
+    <!-- @if(session('saved_url'))
       <div class="form-text">保存したURL：<a href="{{ session('saved_url') }}" target="_blank" rel="noopener">開く</a></div>
-    @endif
+    @endif -->
   </div>
 
   <div class="col-12">
@@ -181,7 +181,7 @@
               <div>{{ $tr->from_station_name }} <span class="text-muted">→</span> {{ $tr->to_station_name }}</div>
 
               <div class="small">
-                日付：
+                申請日：
                 {{ optional($tr->travel_date ? \Illuminate\Support\Carbon::parse($tr->travel_date) : null)->format('Y/m/d') }}
               </div>
 
