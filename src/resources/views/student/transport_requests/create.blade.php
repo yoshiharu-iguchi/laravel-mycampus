@@ -181,7 +181,7 @@
               <div>{{ $tr->from_station_name }} <span class="text-muted">→</span> {{ $tr->to_station_name }}</div>
 
               <div class="small">
-                申請日：
+                経路検索 設定日：
                 {{ optional($tr->travel_date ? \Illuminate\Support\Carbon::parse($tr->travel_date) : null)->format('Y/m/d') }}
               </div>
 
