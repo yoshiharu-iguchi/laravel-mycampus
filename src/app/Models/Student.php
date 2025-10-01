@@ -16,13 +16,16 @@ use App\Models\Guardian;
 use App\Models\Subject;
 use App\Models\Attendance;
 use App\Models\TransportRequest;
+use Kyslik\ColumnSortable\Sortable;
 
 
 class Student extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens,HasFactory,Notifiable;
+    use HasApiTokens,HasFactory,Notifiable,Sortable;
 
     protected $fillable = ['name','student_number','password','email','address',];
+
+    public $sortable = ['id','name','student_number','email'];
 
     protected $hidden = ['password','remember_token','guardian_registration_token',];
 

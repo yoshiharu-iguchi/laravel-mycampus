@@ -1,18 +1,10 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>交通費申請一覧（管理）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap（必要ならレイアウトへ移動可） --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.admin')
 
-  <h1 class="h4 mb-4">交通費申請一覧</h1>
+@section('title','Route of Application')
 
-  {{-- フラッシュメッセージ --}}
+@section('content')
+
+{{-- フラッシュメッセージ --}}
   @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
   @endif
@@ -83,11 +75,12 @@
         <thead class="table-light">
           <tr>
             <th style="width:80px;">ID</th>
-            <th>学生</th>
-            <th>実習先</th>
+            <th>学生氏名</th>
+            <th>実習施設</th>
             <th>区間</th>
+            <th>経路詳細</th>
             <th>日付</th>
-            <th class="text-end" style="width:120px;">合計(円)</th>
+            <th class="text-end" style="width:120px;">片道(円)</th>
             <th style="width:110px;">状態</th>
             <th style="width:240px;" class="text-end">操作</th>
           </tr>
@@ -106,6 +99,20 @@
               <span class="text-muted">→</span>
               {{ $it->to_station_name }}
             </td>
+            <td>
+      @if($it->route_memo)
+        <span class="d-inline-block text-truncate"
+              style="max-width: 220px;"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              data-bs-html="true"
+              title="{!! nl2br(e($it->route_memo)) !!}">
+          {{ \Illuminate\Support\Str::limit($it->route_memo, 50) }}
+        </span>
+      @else
+        <span class="text-muted">—</span>
+      @endif
+    </td>
             <td>
               {{ optional($it->travel_date ? \Illuminate\Support\Carbon::parse($it->travel_date) : null)->format('Y/m/d') }}
             </td>
@@ -173,8 +180,10 @@
     ])->links() }}
   </div>
 
-</div>
+@endsection
 
+</div>
+@push('scripts')
 {{-- 2重送信ガード（簡易） --}}
 <script>
 document.querySelectorAll('form').forEach(f=>{
@@ -184,5 +193,4 @@ document.querySelectorAll('form').forEach(f=>{
   });
 });
 </script>
-</body>
-</html>
+@endpush

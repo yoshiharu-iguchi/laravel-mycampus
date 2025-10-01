@@ -1,28 +1,61 @@
 {{-- resources/views/admin/home.blade.php --}}
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>Admin Home</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif; background:#f5f5f5; }
-    .wrap { max-width: 880px; margin: 6vh auto; padding: 24px; background:#fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-    h1 { margin:0 0 12px; font-size: 22px; }
-    .sub { color:#666; font-size: 13px; margin-bottom: 16px; }
-    button { padding:10px 12px; border:0; border-radius:8px; background:#111827; color:#fff; font-size:14px; cursor:pointer; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>管理者ホーム</h1>
-    <div class="sub">ログイン中: <strong>{{ optional(auth('admin')->user())->email }}</strong></div>
+@extends('layouts.admin')
 
-    <form method="POST" action="{{ route('admin.logout') }}">
-      @csrf
-      <button type="submit">ログアウト</button>
-    </form>
+@section('title','ダッシュボード')
+
+@section('actions')
+  {{-- 右上アクション（必要なら） --}}
+  <a href="{{ route('admin.enrollments.index') }}" class="btn btn-sm btn-primary">
+    履修一覧へ
+  </a>
+@endsection
+
+@section('content')
+  {{-- 概要カード --}}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="text-muted small mb-1">ログイン中の管理者</div>
+          <div class="fw-semibold">{{ optional(auth('admin')->user())->email }}</div>
+        </div>
+      </div>
+    </div>
+    @isset($pendingCount)
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-1">承認待ちの経路申請</div>
+            <div class="h5 mb-0">{{ $pendingCount ?? '—' }}</div>
+          </div>
+        </div>
+      </div>
+    @endisset
   </div>
-  <a href="{{ route('admin.enrollments.index') }}" class="btn btn-sm btn-primary">履修一覧へ</a>
-</body>
-</html>
+
+  {{-- クイックリンク --}}
+  <div class="card">
+    <div class="card-header">クイックリンク</div>
+    <div class="list-group list-group-flush">
+      <a class="list-group-item list-group-item-action"
+         href="{{ route('admin.students.index') }}">
+        <i class="bi bi-people me-2"></i>学生一覧
+      </a>
+      <a class="list-group-item list-group-item-action"
+         href="{{ route('admin.subjects.index') }}">
+        <i class="bi bi-journal-text me-2"></i>科目一覧
+      </a>
+      <a class="list-group-item list-group-item-action"
+         href="{{ route('admin.teachers.index') }}">
+        <i class="bi bi-person-badge me-2"></i>教員一覧
+      </a>
+      <a class="list-group-item list-group-item-action"
+         href="{{ route('admin.tr.index', ['status' => 'pending']) }}">
+        <i class="bi bi-ticket-detailed me-2"></i>経路申請（申請中）
+        @if(isset($pendingCount) && $pendingCount !== null)
+          <span class="badge bg-warning text-dark ms-2">{{ $pendingCount }}</span>
+        @endif
+      </a>
+    </div>
+  </div>
+@endsection

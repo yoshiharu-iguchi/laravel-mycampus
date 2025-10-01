@@ -98,6 +98,10 @@ Route::prefix('guardians')->name('guardian.')->middleware(['guest:guardian','thr
 
 // 管理者ルート
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'],function(){
+    // admin→/admin/dashboardにリダイレクト(フロア入り口の案内)
+    Route::redirect('/','dashboard');
+    Route::get('dashboard',[Admin\HomeController::class,'index'])->name('dashboard');
+
     Route::get('home',[Admin\HomeController::class,'index'])->name('home');
 
     Route::resource('students',Admin\StudentController::class)->only(['index','show','edit','update','destroy']);
@@ -121,6 +125,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 
 // 教員ルート
 Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:teacher'],function(){
+    // teacher->/teacher/dashboardにリダイレクト
+    Route::redirect('/','dashboard');
+    // ダッシュボード別名を追加
+    Route::get('dashboard',[Teacher\HomeController::class,'index'])->name('dashboard');
+    
     Route::get('home',[Teacher\HomeController::class,'index'])->name('home');
 
     // 履修閲覧・管理機能(教員)

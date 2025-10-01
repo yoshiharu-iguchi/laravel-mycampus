@@ -1,23 +1,20 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>科目一覧（管理）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap（必要ならレイアウトに移してください） --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.admin')
 
-  <h1 class="h4 mb-4">科目一覧</h1>
+@section('title','Subjects')
+
+@section('content')
+
+
 
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
   @endif
+  @if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+  @endif
 
-  {{-- 検索フォーム --}}
+  {{-- 検索フォーム（学生一覧と同じUI） --}}
   <div class="card mb-3">
     <div class="card-body">
       <form method="GET" action="{{ url()->current() }}" class="row g-2">
@@ -47,7 +44,7 @@
     </div>
   </div>
 
-  {{-- 件数サマリー --}}
+  {{-- 件数サマリー（学生一覧と統一） --}}
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="small text-muted">
       全 {{ number_format($total) }} 件
@@ -66,7 +63,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <!-- <th style="width: 90px;">ID</th> -->
+            {{-- 必要なら @sortablelink に差し替え可能（例：@sortablelink('subject_code','科目コード')） --}}
             <th>科目コード</th>
             <th>科目名</th>
             <th>単位</th>
@@ -80,7 +77,6 @@
         <tbody>
         @forelse($subjects as $subject)
           <tr>
-            <!-- <td>{{ $subject->id }}</td> -->
             <td>{{ $subject->subject_code }}</td>
             <td>{{ $subject->name_ja }}</td>
             <td>{{ $subject->credits }}</td>
@@ -95,7 +91,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="9" class="text-center text-muted py-5">
+            <td colspan="8" class="text-center text-muted py-5">
               該当する科目は見つかりませんでした。
             </td>
           </tr>
@@ -110,6 +106,4 @@
     {{ $subjects->appends(['keyword' => $keyword])->links() }}
   </div>
 
-</div>
-</body>
-</html>
+@endsection

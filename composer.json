@@ -1,5 +1,8 @@
 {
     "require-dev": {
         "laravel/breeze": "*"
+    },
+    "require": {
+        "kyslik/column-sortable": "^7.0"
     }
 }

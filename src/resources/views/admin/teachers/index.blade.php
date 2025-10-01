@@ -1,16 +1,9 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>教員一覧（管理）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap（必要ならレイアウトに移してください） --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.admin')
 
-  <h1 class="h4 mb-4">教員一覧</h1>
+@section('title','Teachers')
+
+@section('content')
+
 
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
@@ -69,7 +62,7 @@
         <thead class="table-light">
           <tr>
             <th style="width: 90px;">ID</th>
-            <th>氏名</th>
+            <th>教員氏名</th>
             {{-- 教員番号があるプロジェクトの場合は表示（無ければ列ごと削除OK） --}}
             @php $hasTeacherNumber = isset($teachers[0]) && isset($teachers[0]->teacher_number); @endphp
             @if($hasTeacherNumber)
@@ -112,6 +105,4 @@
     {{ $teachers->appends(['keyword' => $keyword])->links() }}
   </div>
 
-</div>
-</body>
-</html>
+@endsection

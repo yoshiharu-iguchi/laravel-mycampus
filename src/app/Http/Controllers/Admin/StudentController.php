@@ -14,11 +14,12 @@ class StudentController extends Controller
         
         $keyword = $request->input('keyword');
 
-        if ($keyword) {
-            $students = Student::where('name','like',"%{$keyword}%")->paginate(15);
-        } else {
-            $students = Student::paginate(15);
+        $query = Student::query();
+
+        if (!empty($keyword)){
+            $query->where('name','like',"{$keyword}%");
         }
+        $students = $query->sortable()->paginate(15);
 
         $total = $students->total();
 

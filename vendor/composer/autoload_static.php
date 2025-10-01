@@ -26,6 +26,7 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         'ef65a1626449d89d0811cf9befce46f0' => __DIR__ . '/..' . '/illuminate/events/functions.php',
         '47e1160838b5e5a10346ac4084b58c23' => __DIR__ . '/..' . '/laravel/prompts/src/helpers.php',
         '35a6ad97d21e794e7e22a17d806652e4' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Functions.php',
+        '606a39d89246991a373564698c2d8383' => __DIR__ . '/..' . '/symfony/polyfill-php85/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -39,6 +40,7 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Php85\\' => 23,
             'Symfony\\Polyfill\\Php84\\' => 23,
             'Symfony\\Polyfill\\Php83\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -65,8 +67,13 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         ),
         'L' => 
         array (
+            'Laravel\\SerializableClosure\\' => 28,
             'Laravel\\Prompts\\' => 16,
             'Laravel\\Breeze\\' => 15,
+        ),
+        'K' => 
+        array (
+            'Kyslik\\ColumnSortable\\' => 22,
         ),
         'I' => 
         array (
@@ -77,6 +84,7 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
             'Illuminate\\Pipeline\\' => 20,
             'Illuminate\\Filesystem\\' => 22,
             'Illuminate\\Events\\' => 18,
+            'Illuminate\\Database\\' => 20,
             'Illuminate\\Contracts\\' => 21,
             'Illuminate\\Container\\' => 21,
             'Illuminate\\Console\\' => 19,
@@ -110,6 +118,10 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         'Termwind\\' => 
         array (
             0 => __DIR__ . '/..' . '/nunomaduro/termwind/src',
+        ),
+        'Symfony\\Polyfill\\Php85\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php85',
         ),
         'Symfony\\Polyfill\\Php84\\' => 
         array (
@@ -191,6 +203,10 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         array (
             0 => __DIR__ . '/..' . '/psr/clock/src',
         ),
+        'Laravel\\SerializableClosure\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laravel/serializable-closure/src',
+        ),
         'Laravel\\Prompts\\' => 
         array (
             0 => __DIR__ . '/..' . '/laravel/prompts/src',
@@ -198,6 +214,10 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         'Laravel\\Breeze\\' => 
         array (
             0 => __DIR__ . '/..' . '/laravel/breeze/src',
+        ),
+        'Kyslik\\ColumnSortable\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/kyslik/column-sortable/src/ColumnSortable',
         ),
         'Illuminate\\View\\' => 
         array (
@@ -229,6 +249,10 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         'Illuminate\\Events\\' => 
         array (
             0 => __DIR__ . '/..' . '/illuminate/events',
+        ),
+        'Illuminate\\Database\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/illuminate/database',
         ),
         'Illuminate\\Contracts\\' => 
         array (
@@ -284,6 +308,7 @@ class ComposerStaticInitb3e4a427f5c94e0f9a18aba5efe988a4
         'DateObjectError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateObjectError.php',
         'DateRangeError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateRangeError.php',
         'Deprecated' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
+        'NoDiscard' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/NoDiscard.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
