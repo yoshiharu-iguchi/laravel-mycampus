@@ -1,4 +1,4 @@
-@extends('layouts.base')
+@extends('layouts.guardian')
 
 @section('title', trim($__env->yieldContent('title', '保護者メニュー')).' | 保護者')
 
