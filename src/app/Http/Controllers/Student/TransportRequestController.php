@@ -21,6 +21,12 @@ class TransportRequestController extends Controller
      * 下段：手入力で申請
      * 右側：自分の直近申請（ステータス表示）
      */
+    public function index()
+    {
+        $requests = \App\Models\TransportRequest::where('student_id',auth('student')->id())
+            ->latest()->paginate(20);
+        return view('student.transport_requests.index',compact('requests'));
+    }
     public function create(Request $request)
     {
         // 施設プルダウンに表示

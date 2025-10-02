@@ -53,6 +53,7 @@ Route::post('/logout', function () {
 //学生ルート
 Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:student'], function() {
     Route::get('home', [Student\HomeController::class,'index'])->name('home');
+    Route::get('profile',[Student\ProfileController::class,'show'])->name('profile.show');
 
     // 科目一覧・詳細
     Route::get('subjects',[Student\SubjectController::class,'index'])->name('subjects.index');
@@ -67,9 +68,12 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
         ->name('progress.index');
 
     // 学生の交通費申請
+    Route::get('transport-requests',[TransportRequestController::class,'index'])->name('tr.index');
     Route::get('transport-requests/create', [TransportRequestController::class, 'create'])->name('tr.create');
     Route::post('transport-requests/search',[TransportRequestController::class,'search'])->name('tr.search');
     Route::post('transport-requests', [TransportRequestController::class, 'store'])->name('tr.store');
+
+    Route::get('facilities',[Student\FacilityController::class,'index'])->name('facilities.index');
 });
 
 //保護者ルート
