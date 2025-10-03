@@ -1,133 +1,106 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>出席簿（教員）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+{{-- resources/views/teacher/attendances/index.blade.php --}}
+@extends('layouts.teacher')
 
-  <h1 class="h4 mb-4">出席簿（科目 × 日付）</h1>
+@section('title','出欠管理 | MyCampus')
 
-  {{-- フラッシュメッセージ --}}
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-  @if($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-      </ul>
-    </div>
-  @endif
+@section('content')
+  @php
+    // 現在の科目・日付（GETのクエリ or Controllerで渡した値）
+    $currentSubjectId = request('subject_id') ?? ($subject->id ?? null);
+    $currentDate      = ($date ?? request('date')) ?: now()->toDateString();
 
-  {{-- 科目＆日付選択（GET） --}}
-  <div class="card mb-3">
+    // $rows が無ければ $attendances を汎用配列に整形
+    $rows = isset($rows) && is_iterable($rows) ? collect($rows) : collect($attendances ?? []);
+    $rows = $rows->map(function($r){
+      $date = data_get($r,'date');
+      if ($date instanceof \Carbon\Carbon) {
+        $date = $date->format('Y-m-d');
+      } elseif (!is_string($date)) {
+        $date = '';
+      }
+      return [
+        'id'           => data_get($r,'id'),
+        'date'         => $date,
+        'student_name' => data_get($r,'student_name', data_get($r,'student.name','')),
+        'status'       => (string) data_get($r,'status','4'), // 4=未記録
+        'note'         => data_get($r,'note',''),
+      ];
+    })->values()->all();
+  @endphp
+
+  <div class="card shadow-sm">
     <div class="card-body">
-      <form method="GET" action="{{ route('teacher.attendances.index') }}" class="row g-2">
-        <div class="col-md-6">
-          <label class="form-label">科目</label>
-          <select name="subject_id" class="form-select" required>
-            <option value="">選択してください</option>
-            @foreach($subjects as $s)
-              <option value="{{ $s->id }}"
-                @if(request('subject_id') == $s->id || (isset($subject) && $subject && $subject->id == $s->id)) selected @endif>
-                {{ $s->name_ja }}
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h1 class="h5 mb-0"><i class="bi bi-check2-square me-2"></i>出欠管理</h1>
+        {{-- 絞り込み（GET） --}}
+        <form method="GET" class="d-flex gap-2">
+          <select name="subject_id" class="form-select form-select-sm" style="min-width: 220px;">
+            <option value="">すべての科目</option>
+            @foreach(($subjects ?? []) as $sub)
+              <option value="{{ $sub->id }}" @selected((string)$currentSubjectId === (string)$sub->id)>
+                {{ $sub->name_ja ?? $sub->name ?? '科目' }}
               </option>
             @endforeach
           </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">日付</label>
-          <input type="date" name="date" class="form-control" value="{{ $date }}" required>
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-          <button class="btn btn-primary w-100">表示</button>
-        </div>
-      </form>
-    </div>
-  </div>
+          <input type="date" name="date" value="{{ $currentDate }}" class="form-control form-control-sm" style="min-width: 160px;">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">絞り込み</button>
+        </form>
+      </div>
 
-  {{-- 出席簿テーブル --}}
-  @if($subject)
-    @php
-      $statusLabels = __('attendance.statuses'); // ['0'=>'欠席',...]
-      $order = [1,0,2,3,4]; // 出席→欠席→遅刻→公欠→未記録
-    @endphp
+      {{-- 一括保存（POST） --}}
+      <form method="POST" action="{{ route('teacher.attendances.bulkUpdate') }}">
+        @csrf
 
-    <div class="small text-muted mb-2">
-      {{ $subject->name_ja }} ／ {{ $date }} ／ 受講者 {{ number_format($attendances->count()) }} 名
-    </div>
+        {{-- bulkUpdate のバリデーション要件に合わせて hidden を送る --}}
+        <input type="hidden" name="subject_id" value="{{ $currentSubjectId }}">
+        <input type="hidden" name="date"       value="{{ $currentDate }}">
 
-    <div class="card">
-      <div class="table-responsive">
-        <form method="POST" action="{{ route('teacher.attendances.bulkUpdate') }}">
-          @csrf
-          <input type="hidden" name="subject_id" value="{{ $subject->id }}">
-          <input type="hidden" name="date" value="{{ $date }}">
-
-          <table class="table table-hover align-middle mb-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-3">
             <thead class="table-light">
               <tr>
-                <th style="width: 40%;">学生名</th>
-                <th style="width: 220px;">状態</th>
+                <th style="width: 160px;">日付</th>
+                <th>学生</th>
+                <th style="width: 180px;">ステータス</th>
                 <th>備考</th>
               </tr>
             </thead>
             <tbody>
-            @forelse($attendances as $i => $a)
-              <tr>
-                <td>{{ $a->student->name }}</td>
-                <td>
-                  <input type="hidden" name="rows[{{ $i }}][id]" value="{{ $a->id }}">
-                  <select name="rows[{{ $i }}][status]" class="form-select">
-                    @foreach($order as $val)
-                      <option value="{{ $val }}" @selected($a->status === $val)>
-                        {{ $statusLabels[(string)$val] ?? '不明' }}
-                      </option>
-                    @endforeach
-                  </select>
-                </td>
-                <td>
-                  <input type="text"
-                         name="rows[{{ $i }}][note]"
-                         value="{{ old("rows.$i.note", $a->note) }}"
-                         class="form-control"
-                         maxlength="255"
-                         placeholder="（任意）メモ">
-                </td>
-              </tr>
-            @empty
-              <tr>
-                <td colspan="3" class="text-center text-muted py-5">
-                  受講学生がいません。
-                </td>
-              </tr>
-            @endforelse
+              @forelse($rows as $i => $row)
+                <tr>
+                  <td>
+                    <input type="hidden" name="rows[{{ $i }}][id]" value="{{ $row['id'] ?? '' }}">
+                    <input type="date"  name="rows[{{ $i }}][date]" class="form-control form-control-sm" value="{{ $row['date'] ?? '' }}">
+                  </td>
+                  <td class="text-nowrap">{{ $row['student_name'] ?? '—' }}</td>
+                  <td>
+                    @php $s = (string)($row['status'] ?? '4'); @endphp
+                    <select name="rows[{{ $i }}][status]" class="form-select form-select-sm">
+                      <option value="1" @selected($s==='1')>出席</option>
+                      <option value="2" @selected($s==='2')>遅刻</option>
+                      <option value="3" @selected($s==='3')>早退</option>
+                      <option value="0" @selected($s==='0')>欠席</option>
+                      <option value="4" @selected($s==='4')>未記録</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text" name="rows[{{ $i }}][note]" class="form-control form-control-sm" value="{{ $row['note'] ?? '' }}" placeholder="メモ（任意）">
+                  </td>
+                </tr>
+              @empty
+                <tr><td colspan="4" class="text-center text-muted py-4">表示する出席データがありません。</td></tr>
+              @endforelse
             </tbody>
           </table>
-        </form>
-      </div>
-      <div class="card-footer text-end">
-        <button form="__save_form__" class="d-none"></button>
-        <button type="submit"
-                class="btn btn-success"
-                onclick="this.closest('.card').querySelector('form').submit()">
-          保存
-        </button>
-      </div>
-    </div>
-  @else
-    <div class="card">
-      <div class="card-body text-muted">
-        科目と日付を選んで「表示」を押してください。
-      </div>
-    </div>
-  @endif
+        </div>
 
-</div>
-</body>
-</html>
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="text-muted small">表示件数：{{ count($rows) }}件</div>
+          <button type="submit" class="btn btn-dark btn-sm">
+            <i class="bi bi-save me-1"></i>一括保存
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+@endsection
