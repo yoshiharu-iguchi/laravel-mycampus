@@ -1,37 +1,63 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>Teacher Home</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif; background:#f5f5f5; }
-    .wrap { max-width: 640px; margin: 8vh auto; padding: 24px; background:#fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-    h1 { margin: 0 0 16px; font-size: 22px; }
-    p { margin: 12px 0; font-size: 14px; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-    form { display:inline; }
-    button { padding:6px 12px; border:0; border-radius:6px; background:#111827; color:#fff; font-size:13px; cursor:pointer; }
-    small.muted { color:#666; font-size:12px; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="topbar">
-      <h1>教員ホーム</h1>
-      <form method="POST" action="{{ route('teacher.logout') }}">
-        @csrf
-        <button type="submit">ログアウト</button>
-      </form>
-    </div>
+@extends('layouts.teacher')
 
-    <p>ようこそ、{{ Auth::guard('teacher')->user()->name }} さん。</p>
-    <p>ここは教員専用のホーム画面です。</p>
 
-    <hr>
-    <small class="muted">※ このページは教員アカウントでログインした方のみが閲覧できます。</small>
-  </div>
-  <a href="{{ route('teacher.enrollments.index') }}" class="btn btn-sm btn-primary">履修一覧へ</a>
-</body>
-</html>
+@section('title', '教員ホーム | MyCampus')
+
+
+@section('content')
+<div class="row g-3 mb-3">
+<div class="col-12">
+<div class="card p-3">
+<h1 class="h5 mb-1"><i class="bi bi-house-door me-1"></i> 教員ホーム</h1>
+<p class="text-muted mb-0">ようこそ、{{ Auth::guard('teacher')->user()->name }} さん。</p>
+</div>
+</div>
+</div>
+
+
+<div class="row g-3">
+<div class="col-12 col-md-4">
+<a href="{{ route('teacher.enrollments.index') }}" class="text-decoration-none">
+<div class="card p-3 h-100">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-people fs-4"></i>
+<div>
+<div class="fw-semibold">履修一覧</div>
+<div class="text-muted small">担当科目の履修状況を確認</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+
+
+<div class="col-12 col-md-4">
+<a href="{{ route('teacher.attendances.index') }}" class="text-decoration-none">
+<div class="card p-3 h-100">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-check2-square fs-4"></i>
+<div>
+<div class="fw-semibold">出欠管理</div>
+<div class="text-muted small">出席簿・一括更新</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+
+
+<div class="col-12 col-md-4">
+<a href="{{ route('teacher.grades.index') }}" class="text-decoration-none">
+<div class="card p-3 h-100">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-card-checklist fs-4"></i>
+<div>
+<div class="fw-semibold">成績管理</div>
+<div class="text-muted small">評価の一覧と一括更新</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+</div>
+@endsection
