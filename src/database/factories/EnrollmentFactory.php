@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\Term;
+use App\Enums\EnrollmentStatus;
 use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\Subject;
@@ -24,8 +26,8 @@ class EnrollmentFactory extends Factory
             'student_id'    => Student::factory(),
             'subject_id'    => Subject::factory(),
             'year'          => 2025,
-            'term'          => fake()->randomElement(Enrollment::TERMS),
-            'status'        => 'registered',
+            'term'          => fake()->randomElement(Term::cases()),
+            'status'        => EnrollmentStatus::Registered,
             'registered_at' => now(),
         ];
     }

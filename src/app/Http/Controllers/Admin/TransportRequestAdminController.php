@@ -24,7 +24,7 @@ class TransportRequestAdminController extends Controller
             'status'      => TransportRequestStatus::Approved,
             'approved_by' => auth('admin')->id(),
             'approved_at' => now(),
-            'admin_note'  => $this->mergeNote($tr->admin_note, $reason),
+            'admin_note'  => $reason,
         ]);
 
         $tr->student?->notify(new TransportRequestApproved($tr));
@@ -41,17 +41,17 @@ class TransportRequestAdminController extends Controller
             'status'      => TransportRequestStatus::Rejected,
             'approved_by' => auth('admin')->id(),
             'approved_at' => now(),
-            'admin_note'  => $this->mergeNote($tr->admin_note, $reason),
+            'admin_note'  => $reason,
         ]);
 
         $tr->student?->notify(new TransportRequestRejected($tr));
         return back()->with('status', '却下し、学生へ通知しました。');
     }
 
-    private function mergeNote(?string $old, ?string $add): ?string
-    {
-        $add = trim((string)$add);
-        if ($add === '') return $old;
-        return $old ? ($old . "\n---\n" . $add) : $add;
-    }
+    // private function mergeNote(?string $old, ?string $add): ?string
+    // {
+    //     $add = trim((string)$add);
+    //     if ($add === '') return $old;
+    //     return $old ? ($old . "\n---\n" . $add) : $add;
+    // }
 }
