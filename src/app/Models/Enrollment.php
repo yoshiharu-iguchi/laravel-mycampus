@@ -21,6 +21,7 @@ class Enrollment extends Model
     ];
 
     protected $casts = [
+        'year' => 'integer',
         'term' => Term::class,
         'status' => EnrollmentStatus::class,
         'registered_at' => 'datetime',
