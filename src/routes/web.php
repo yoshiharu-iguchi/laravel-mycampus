@@ -6,11 +6,9 @@ use App\Http\Controllers\Student;
 use App\Http\Controllers\Guardian;
 use App\Http\Controllers\Teacher;
 
-
 use App\Http\Controllers\Guardian\RegisterWithTokenController;
 use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
-use App\Http\Controllers\Admin\StudentInviteController;
 use App\Http\Controllers\Student\TransportRequestController;
 use App\Http\Controllers\Admin\TransportRequestAdminController;
 
@@ -133,21 +131,42 @@ Route::group(['prefix' => 'teacher', 'as' => 'teacher.', 'middleware' => 'auth:t
     Route::redirect('/','dashboard');
     // ダッシュボード別名を追加
     Route::get('dashboard',[Teacher\HomeController::class,'index'])->name('dashboard');
-    
     Route::get('home',[Teacher\HomeController::class,'index'])->name('home');
 
-    // 履修閲覧・管理機能(教員)
-    Route::get('enrollments',[TeacherEnrollmentController::class,'index'])
+    // 科目一覧(自分の担当だけ表示)
+    Route::get('subjects',[Teacher\SubjectController::class,'index'])
+        ->name('subjects.index');
+    // 科目詳細(ここを入り口に下位へ降りる)
+    Route::get('subjects/{subject}',[Teacher\SubjectController::class,'show'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
+        ->name('subjects.show');
+    
+    Route::get('subjects/{subject}/enrollments',[TeacherEnrollmentController::class,'index'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
         ->name('enrollments.index');
 
-    Route::get('attendances',[Teacher\AttendanceController::class,'index'])
+    // 出席(閲覧・一括更新)
+    Route::get('subjects/{subject}/attendances',[Teacher\AttendanceController::class,'index'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
         ->name('attendances.index');
-    Route::post('attendances/bulk-update',[Teacher\AttendanceController::class,'bulkUpdate'])
+
+    Route::post('subjects/{subject}/attendances/bulk-update',[Teacher\AttendanceController::class,'bulkUpdate'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
         ->name('attendances.bulkUpdate');
 
-    Route::get('grades',[Teacher\GradeController::class,'index'])
+    // 成績(閲覧・一括更新)
+    Route::get('subjects/{subject}/grades',[Teacher\GradeController::class,'index'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
         ->name('grades.index');
-    Route::post('grades/bulk-update',[Teacher\GradeController::class,'bulkUpdate'])
+
+    Route::post('subjects/{subject}/grades/bulk-update',[Teacher\GradeController::class,'bulkUpdate'])
+        ->whereNumber('subject')
+        ->middleware('can:view,subject')
         ->name('grades.bulkUpdate');
 });
 

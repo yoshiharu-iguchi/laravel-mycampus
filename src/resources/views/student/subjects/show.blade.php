@@ -1,71 +1,109 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>科目詳細（学生）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap（必要ならレイアウトへ移動可） --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.student')
+@section('title', ($subject->name_ja ?? $subject->name_en ?? '科目').' | 科目詳細')
+@section('content')
 
-  <h1 class="h4 mb-4">科目詳細</h1>
+{{-- fixed-top ナビ対策の上余白 --}}
+<div class="pt-4"></div>
 
-  {{-- フラッシュメッセージ --}}
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-  @if($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-      </ul>
-    </div>
-  @endif
+{{-- === 科目詳細カード（教師側と同テイスト） === --}}
+@php
+  // 表示名
+  $displayName = $subject->name_ja ?? $subject->name_en ?? '名称未設定';
 
-  {{-- 科目情報カード --}}
-  <div class="card mb-3">
-    <div class="card-body">
-      <dl class="row mb-0">
-        <dt class="col-sm-3">ID</dt>
-        <dd class="col-sm-9">{{ $subject->id }}</dd>
+  // 開講期間（学期）ラベル（Subjectにterm_labelアクセサがあれば優先）
+  if (isset($subject->term_label)) {
+      $termLabel = $subject->term_label;
+  } else {
+      $termLabel = '-';
+      $t = $subject->term;
+      if ($t instanceof \App\Enums\Term) {
+          $termLabel = $t->label();
+      } else {
+          $raw  = is_string($t) ? trim($t) : (string)$t;
+          $norm = mb_strtolower(str_replace([' ', '-', '　'], '', $raw));
+          $termLabel = match ($norm) {
+              '1','spring','前期' => '前期',
+              '2','autumn','後期' => '後期',
+              '3','fullyear','fullyear科目','full_year','通年' => '通年',
+              default => is_numeric($raw) ? (['1'=>'前期','2'=>'後期','3'=>'通年'][(string)$raw] ?? '-') : '-',
+          };
+      }
+  }
 
-        <dt class="col-sm-3">科目コード</dt>
-        <dd class="col-sm-9">{{ $subject->subject_code }}</dd>
+  // 必修/選択ラベル（Subjectにcategory_labelアクセサがあれば優先）
+  if (isset($subject->category_label)) {
+      $categoryLabel = $subject->category_label;
+  } else {
+      $rawCat = $subject->category;
+      if (is_string($rawCat))       $key = mb_strtolower(trim($rawCat));
+      elseif (is_bool($rawCat))     $key = $rawCat ? 'true' : 'false';
+      elseif (is_numeric($rawCat))  $key = (string)(int)$rawCat; // 0/1
+      else                          $key = '';
+      $categoryLabel = match ($key) {
+          '必修','必須','required','compulsory','core','1','true' => '必修',
+          '選択','elective','optional','0','false'                 => '選択',
+          default => '—',
+      };
+  }
 
-        <dt class="col-sm-3">科目名</dt>
-        <dd class="col-sm-9">{{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}</dd>
+  $capacity = $subject->capacity ?? '—';
+  $desc     = $subject->description ?: '（説明は登録されていません）';
+@endphp
 
-        <dt class="col-sm-3">単位</dt>
-        <dd class="col-sm-9">{{ rtrim(rtrim(number_format($subject->credits,1),'0'),'.') }}</dd>
+<h1 class="h5 mb-3">科目詳細</h1>
 
-        <dt class="col-sm-3">年度</dt>
-        <dd class="col-sm-9">{{ $subject->year ?? '—' }}</dd>
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row gy-2">
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">ID</div>
+        <div class="fw-semibold">{{ $subject->id }}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">科目コード</div>
+        <div class="fw-semibold">{{ $subject->subject_code ?? '—' }}</div>
+      </div>
 
-        <dt class="col-sm-3">開講期間</dt>
-        <dd class="col-sm-9">{{ $subject->term ?? '—' }}</dd>
+      <div class="col-12">
+        <div class="text-muted small">科目名</div>
+        <div class="fw-semibold">{{ $displayName }}</div>
+      </div>
 
-        <dt class="col-sm-3">必修/選択</dt>
-        <dd class="col-sm-9">
-          @php
-            $cat = $subject->category ?? null;
-            $label = $cat==='required' ? '必修' : ($cat==='elective' ? '選択' : ($cat ?? '—'));
-          @endphp
-          {{ $label }}
-        </dd>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">単位</div>
+        <div class="fw-semibold">{{ rtrim(rtrim((string)$subject->credits, '0'), '.') ?: '—' }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">年度</div>
+        <div class="fw-semibold">{{ $subject->year ?? '—' }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">開講期間</div>
+        <div class="fw-semibold">{{ $termLabel }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">必修/選択</div>
+        <div class="fw-semibold">
+          @php $isRequired = ($categoryLabel === '必修'); @endphp
+          <span class="badge {{ $isRequired ? 'text-bg-danger' : 'text-bg-secondary' }}">{{ $categoryLabel }}</span>
+        </div>
+      </div>
 
-        <dt class="col-sm-3">定員</dt>
-        <dd class="col-sm-9">{{ $subject->capacity ?? '—' }}</dd>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">定員</div>
+        <div class="fw-semibold">{{ $capacity }}</div>
+      </div>
 
-        <dt class="col-sm-3">説明</dt>
-        <dd class="col-sm-9">{{ $subject->description ?: '（説明は登録されていません）' }}</dd>
-      </dl>
+      <div class="col-12 mt-2">
+        <div class="text-muted small">説明</div>
+        <div>{{ $desc }}</div>
+      </div>
     </div>
   </div>
+</div>
 
-  {{-- 履修登録カード --}}
-  <div class="card">
+{{-- 履修登録カード --}}
+<div class="card">
   <div class="card-header">履修手続き</div>
   <div class="card-body">
     @if($enrollment)
@@ -74,57 +112,49 @@
             onsubmit="return confirm('この履修を取り消しますか？')">
         @csrf
         @method('DELETE')
-        <input type="hidden" name="return_to" value="{{ url()->full() }}"> {{-- 戻り先を明示 --}}
+        <input type="hidden" name="return_to" value="{{ url()->full() }}">
         <button class="btn btn-outline-danger">履修を取り消す</button>
       </form>
       <span class="badge text-bg-success ms-2 align-middle">履修中</span>
     @else
-      {{-- ★未履修：登録フォームを表示 --}}
-      <form method="POST" action="{{ route('student.enrollments.store') }}" class="row g-2 align-items-center">
+      {{-- ★未履修：登録フォームを表示（学期は未選択でもOK） --}}
+      <form method="post" action="{{ route('student.enrollments.store') }}" class="mt-3">
         @csrf
-        <input type="hidden" name="return_to" value="{{ url()->full() }}"> {{-- 戻り先を明示 --}}
         <input type="hidden" name="subject_id" value="{{ $subject->id }}">
-        <input type="hidden" name="year" value="{{ now()->year }}">
 
-        <div class="col-auto">
-  <label for="term" class="col-form-label">学期</label>
-</div>
-<div class="col-auto">
-  @php
-    // 既存の値を安全に数値へ寄せる（編集/詳細ページでも落ちないように）
-    $subjectTermValue = null;
-    if ($subject->term instanceof \App\Enums\Term) {
-        $subjectTermValue = $subject->term->value;
-    } elseif (is_numeric($subject->term)) {
-        $subjectTermValue = (int) $subject->term;
-    } else {
-        $subjectTermValue = null; // 不明なら null
-    }
-    // old('term') 優先、なければ科目の既存値、さらに無ければ「通年」を既定値に
-    $currentTerm = (int) old('term', $subjectTermValue ?? \App\Enums\Term::FullYear->value);
-  @endphp
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <label class="form-label">年度</label>
+            <input type="number" name="year"
+                   class="form-control form-control-sm"
+                   value="{{ old('year', $subject->year ?? now()->year) }}" required>
+          </div>
 
-  <select id="term" name="term" class="form-select">
-    @foreach(\App\Enums\Term::cases() as $t)
-      <option value="{{ $t->value }}" @selected($currentTerm === $t->value)>
-        {{ $t->label() }}
-      </option>
-    @endforeach
-  </select>
-</div>
-        <div class="col-auto">
-          <button class="btn btn-primary">履修登録する</button>
+          <div class="col-auto">
+            <label class="form-label">学期</label>
+            <select name="term" class="form-select form-select-sm">
+              <option value="" @selected(old('term')===null || old('term')==='')>（選択しない）</option>
+              @foreach(\App\Enums\Term::cases() as $t)
+                <option value="{{ $t->value }}" @selected((string)old('term') === (string)$t->value)>
+                  {{ $t->label() }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+
+          <div class="col-auto">
+            <button class="btn btn-primary btn-sm">履修登録</button>
+          </div>
         </div>
       </form>
     @endif
   </div>
 </div>
 
-  {{-- 戻るリンク --}}
-  <div class="mt-3">
-    <a href="{{ route('student.subjects.index') }}" class="btn btn-outline-secondary">科目一覧へ戻る</a>
-  </div>
-
+{{-- 戻るリンク --}}
+<div class="mt-3">
+  <a href="{{ route('student.subjects.index') }}" class="btn btn-outline-secondary">科目一覧へ戻る</a>
 </div>
-</body>
-</html>
+
+@endsection
+

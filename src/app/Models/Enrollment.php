@@ -9,42 +9,37 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\Term;
 use App\Enums\EnrollmentStatus;
 
-
-
-use function Laravel\Prompts\select;
-
 class Enrollment extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'student_id','subject_id','year','term','status','registered_at',
     ];
 
     protected $casts = [
-        'year' => 'integer',
-        'term' => Term::class,
-        'status' => EnrollmentStatus::class,
+        'year'          => 'integer',
+        'term'          => Term::class,               // ← 常に App\Enums\Term になる
+        'status'        => EnrollmentStatus::class,
         'registered_at' => 'datetime',
     ];
 
-    protected function statusLabel():Attribute
+    // 関連（任意）
+    public function student(): BelongsTo { return $this->belongsTo(Student::class); }
+    public function subject(): BelongsTo { return $this->belongsTo(Subject::class); }
+
+    // 表示用アクセサ（任意）: $enrollment->term_label / status_label
+    protected function termLabel(): Attribute
     {
-        return Attribute::get(fn ()=>
-        $this->status?->label() ?? '');
+        return Attribute::make(
+            get: fn () => $this->term?->label() ?? ''
+        );
     }
-    protected function termLabel():Attribute
+
+    protected function statusLabel(): Attribute
     {
-        return Attribute::get(fn ()=>
-        $this->term?->label() ?? ''
-    );
-    }
-
-    public function student(){
-        return $this->belongsTo(Student::class);
-    }
-
-    public function subject(){
-        return $this->belongsTo(Subject::class);
-
+        return Attribute::make(
+            get: fn () => $this->status?->label() ?? ''
+        );
     }
 }

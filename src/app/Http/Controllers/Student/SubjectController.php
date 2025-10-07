@@ -37,10 +37,8 @@ class SubjectController extends Controller
 
         $enrollment = Enrollment::where('student_id',auth('student')->id())
             ->where('subject_id',$subject->id)
-            ->latest()
             ->first();
 
         return view('student.subjects.show',compact('subject','enrollment'));
     }
-
 }

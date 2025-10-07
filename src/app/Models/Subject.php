@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Teacher;
-use App\Models\Enrollment;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subject extends Model
 {
@@ -46,5 +47,28 @@ class Subject extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    public function getCategoryLabelAttribute(): string
+{
+    $raw = $this->category;
+
+    if (is_string($raw)) {
+        $key = mb_strtolower(trim($raw));     // 'Elective' なども吸収
+    } elseif (is_bool($raw)) {
+        $key = $raw ? 'true' : 'false';
+    } elseif (is_numeric($raw)) {
+        $key = (string)(int)$raw;             // 0/1 を想定
+    } else {
+        $key = '';
+    }
+
+    return match ($key) {
+        // 必修
+        '必修','必須','required','compulsory','core','1','true' => '必修',
+        // 選択
+        '選択','elective','optional','0','false'                 => '選択',
+        default => '-',
+    };
+
     
+}
 }

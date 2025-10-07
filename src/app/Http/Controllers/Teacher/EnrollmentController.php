@@ -3,24 +3,37 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Enrollment;
 use App\Models\Subject;
+use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EnrollmentController extends Controller
 {
-    public function index(Request $request): View
+    // ルート: GET /teacher/subjects/{subject}/enrollments
+    public function index(Subject $subject, Request $request): View
     {
-        $q = Enrollment::query()->with(['student','subject'])->latest();
+        // 二重ロック（ルートに can:view,subject も付いている）
+        $this->authorize('view', $subject);
 
-        if ($sid = $request->integer('subject_id')) $q->where('subject_id', $sid);
-        if ($year = $request->integer('year'))       $q->where('year', $year);
-        if ($term = $request->input('term'))         $q->where('term', $term);
+        $validated = $request->validate([
+        'year' => ['nullable','integer','min:1900','max:2100'],
+        'term' => ['nullable','integer','in:1,2,3'], // Term(int)に合わせる
+    ]);
 
+        $q = $subject->enrollments()
+            ->with(['student:id,student_number,name'])       // 科目に紐づく在籍だけ
+            ->orderByDesc('id');
+
+        if (($year = $validated['year'] ?? null) !== null) {
+        $q->where('year', $year);
+        }
+        if (($term = $validated['term'] ?? null) !== null) {
+        $q->where('term', $term);
+        }
+        
         $enrollments = $q->paginate(20)->withQueryString();
-        $subjects    = Subject::orderBy('name_ja')->get(['id','name_ja','name_en']);
 
-        return view('teacher.enrollments.index', compact('enrollments','subjects'));
+        return view('teacher.enrollments.index', compact('subject','enrollments'));
     }
 }

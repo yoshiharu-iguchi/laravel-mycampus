@@ -14,7 +14,7 @@
 
   <div class="row g-3">
     <div class="col-12 col-md-4">
-      <a href="{{ route('teacher.enrollments.index') }}" class="text-decoration-none">
+      <a href="{{ route('teacher.subjects.index') }}" class="text-decoration-none">
         <div class="card p-3 h-100">
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-people fs-4"></i>
@@ -28,7 +28,7 @@
     </div>
 
     <div class="col-12 col-md-4">
-      <a href="{{ route('teacher.attendances.index') }}" class="text-decoration-none">
+      <a href="{{ route('teacher.subjects.index') }}" class="text-decoration-none">
         <div class="card p-3 h-100">
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-check2-square fs-4"></i>
@@ -42,7 +42,7 @@
     </div>
 
     <div class="col-12 col-md-4">
-      <a href="{{ route('teacher.grades.index') }}" class="text-decoration-none">
+      <a href="{{ route('teacher.subjects.index') }}" class="text-decoration-none">
         <div class="card p-3 h-100">
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-card-checklist fs-4"></i>
