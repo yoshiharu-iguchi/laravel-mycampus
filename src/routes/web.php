@@ -72,18 +72,19 @@ Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:s
     Route::post('transport-requests', [TransportRequestController::class, 'store'])->name('tr.store');
 
     Route::get('facilities',[Student\FacilityController::class,'index'])->name('facilities.index');
+
 });
 
 //保護者ルート
 Route::group(['prefix' => 'guardian','as' => 'guardian.', 'middleware' => 'auth:guardian'],function(){
     Route::get('home',[Guardian\HomeController::class,'index'])->name('home');
-
+    Route::get('profile',[Guardian\ProfileController::class,'show'])->name('profile.show');
     Route::get('progress',[Guardian\ProgressController::class,'index'])
         ->name('progress.index');
-
 });
+
 // トークン付き保護者登録ルートを追加(ログイン不要)
-Route::prefix('guardians')->name('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function(){
+Route::prefix('guardian')->name('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function(){
     Route::get('register/{token}',[RegisterWithTokenController::class,'show'])
         ->where('token','[A-Za-z0-9]{64}')
         ->name('register.token.show');

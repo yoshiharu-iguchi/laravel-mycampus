@@ -27,7 +27,7 @@
           <dt class="col-sm-3">認証状態</dt>
           <dd class="col-sm-9">
             @if($s->email_verified_at)
-              認証済み（{{ $s->email_verified_at }}）
+              認証済み（{{ $s->email_verified_at }})
             @else
               未認証
               <form method="POST" action="{{ route('student.verification.send') }}" class="d-inline ms-2">

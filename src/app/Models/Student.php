@@ -17,6 +17,7 @@ use App\Models\Subject;
 use App\Models\Attendance;
 use App\Models\TransportRequest;
 use Kyslik\ColumnSortable\Sortable;
+use App\Models\Grade;
 
 
 class Student extends Authenticatable implements MustVerifyEmail
@@ -70,6 +71,10 @@ class Student extends Authenticatable implements MustVerifyEmail
         ->withPivot(['year','term','status','registered_at'])
         ->withTimestamps();
                     
+    }
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class);
     }
 
     public function attendances()
