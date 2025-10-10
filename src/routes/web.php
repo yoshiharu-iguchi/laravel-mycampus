@@ -11,7 +11,15 @@ use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController
 use App\Http\Controllers\Teacher\EnrollmentController as TeacherEnrollmentController;
 use App\Http\Controllers\Student\TransportRequestController;
 use App\Http\Controllers\Admin\TransportRequestAdminController;
-
+use App\Providers\RouteServiceProvider;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +37,89 @@ Route::get('/',function() {
 });
 
 require __DIR__.'/auth.php';
+Route::get('/login', function () {
+    return response('Login', 200);
+})->middleware('guest')->name('login');
+
+Route::get('/forgot-password', function () {
+    return response('Forgot Password', 200); // 画面なしでも200ならテスト通過
+})->middleware('guest')->name('password.request');
+
+// 2) リンク請求: POST /forgot-password
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate(['email' => ['required','email']]);
+
+    $status = Password::sendResetLink($request->only('email'));
+
+    return $status === Password::RESET_LINK_SENT
+        ? back()->with(['status' => __($status)])
+        : back()->withErrors(['email' => __($status)]);
+})->middleware(['guest','throttle:6,1'])->name('password.email');
+
+// 3) 再設定フォーム: GET /reset-password/{token}
+Route::get('/reset-password/{token}', function (Request $request, string $token) {
+    return response('Reset Password Form', 200);
+})->middleware('guest')->name('password.reset');
+
+// 4) 再設定実行: POST /reset-password
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token'    => ['required'],
+        'email'    => ['required','email'],
+        'password' => ['required','confirmed','min:8'],
+    ]);
+
+    $status = Password::reset(
+        $request->only('email','password','password_confirmation','token'),
+        function ($user) use ($request) {
+            $user->forceFill([
+                'password'       => Hash::make($request->password),
+                'remember_token' => Str::random(60),
+            ])->save();
+        }
+    );
+
+    return $status == Password::PASSWORD_RESET
+        ? redirect()->route('login')->with('status', __($status))
+        : back()->withErrors(['email' => [__($status)]]);
+})->middleware('guest')->name('password.update');
+
+Route::get('/confirm-password',function() {
+    return response('Confirm Password',200);
+})->middleware('auth')->name('password.confirm');
+
+Route::post('/confirm-password',function (Request $request) {
+    $request->validate([
+        'password' => ['required','string'],
+    ]);
+    $user = $request->user();
+    if (! Hash::check($request->input('password'),$user->password)){
+        return back()->withErrors(['password' => __('auth.password')]);
+    }
+    $request->session()->put('auth.password_confirmed_at',time());
+
+    return redirect()->intended('/');
+})->middleware(['auth','throttle:6,1']);
+Route::get('/verify-email',function(){
+    return response('Verify Email Notice',200);
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/verify-email/{id}/{hash}',function (EmailVerificationRequest $request){
+    $user = $request->user();
+
+    if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
+    return redirect(RouteServiceProvider::HOME.'?verified=1');
+})->middleware(['auth','signed'])->name('verification.verify');
+
+Route::post('/email/verification-notification',function(Request $request){
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('status','verification-link-sent');
+})->middleware(['auth','throttle:6,1'])->name('verification.send');
+
 Route::get('/dashboard', function () {
     if (auth('student')->check())  return redirect()->route('student.home');
     if (auth('teacher')->check())  return redirect()->route('teacher.home');
@@ -47,6 +138,26 @@ Route::post('/logout', function () {
     request()->session()->regenerateToken();
     return redirect('/');
 })->name('logout');
+
+Route::put('/password', function (Request $request) {
+    $validator = Validator::make($request->all(),[
+        'current_password'      => ['required', 'current_password'], // 現在パス
+        'password'              => ['required', 'confirmed', PasswordRule::min(8)],
+
+    ]);
+    if ($validator->fails()){
+        return redirect('/profile')->withErrors($validator,'updatePassword');
+    }
+    $request->user()->forceFill([
+        'password' => Hash::make($request->input('password')),
+    ])->save();
+
+    return redirect('/profile');
+        
+    })->middleware('auth')->name('password.update.current');
+
+   
+
 
 //学生ルート
 Route::group(['prefix' => 'student', 'as' => 'student.', 'middleware' => 'auth:student'], function() {

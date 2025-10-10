@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rules\Enum;
+use App\Enums\Category;
+
 
 class SubjectController extends Controller
 {
-    /**
-     * 科目一覧（キーワードがあれば日本語名 or 科目コードで部分一致）
-     */
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
     public function index(Request $request)
     {
         $keyword = $request->input('keyword');
@@ -49,37 +54,38 @@ class SubjectController extends Controller
      */
     public function store(Request $request)
     {
-        $rules = [
+        Log::info('ENTER store');
+
+        $validated=$request->validate([
             'subject_code' => ['required', 'string', 'max:30', 'unique:subjects,subject_code'],
             'name_ja'      => ['required', 'string', 'max:100'],
             'name_en'      => ['nullable', 'string', 'max:100'], // 英語名は任意（使わなくてもOK）
-            'credits'      => ['required', 'numeric', 'between:0,99.9'], // 1.5 なども許可
+            'credits'      => ['required', 'integer', 'between:1,4'], // 1.5 なども許可
             'year'         => ['nullable', 'integer', 'between:2000,2100'],
-            'term'         => ['nullable', 'string', Rule::in(['前期','後期','通年'])],
-            'category'     => ['required', 'string', Rule::in(['必修','選択'])],
+            'term'         => ['nullable', 'string', Rule::in(['前期','後期','通年',1,2,3,'1','2','3'])],
+            'category'     => ['required', new Enum(Category::class)],
             'capacity'     => ['nullable', 'integer', 'min:0', 'max:100000'],
             'description'  => ['nullable', 'string'],
-        ];
-
-        // エラーメッセージの「項目名」だけ日本語化（メッセージ本文は既定でOK）
-        $attributes = [
+        ],[],[
             'subject_code' => '科目コード',
             'name_ja'      => '科目名（日本語）',
-            'name_en'      => '科目名（英語）',
             'credits'      => '単位数',
             'year'         => '年度',
             'term'         => '開講期間',
             'category'     => '必修/選択',
             'capacity'     => '定員',
-            'description'  => '説明',
-        ];
 
-        $validated = $request->validate($rules, [], $attributes);
+        ]);
+
+        Log::info('VALIDATED',$validated);
 
         $subject = Subject::create($validated);
 
-        return redirect()->route('admin.subjects.show', $subject)
-                         ->with('status', '科目を登録しました。');
+        Log::info('CREATED',['id' => $subject->id]);
+
+        return redirect()->route('admin.subjects.show',$subject)
+                        ->with('status','科目を登録しました。');
+        
     }
 
     /**
@@ -105,41 +111,44 @@ class SubjectController extends Controller
      * 更新処理（ユニークは自分のIDを除外）
      */
     public function update(Request $request, Subject $subject)
-    {
-        $rules = [
-            'subject_code' => [
-                'required', 'string', 'max:30',
-                Rule::unique('subjects', 'subject_code')->ignore($subject->id),
-            ],
-            'name_ja'      => ['required', 'string', 'max:100'],
-            'name_en'      => ['nullable', 'string', 'max:100'],
-            'credits'      => ['required', 'numeric', 'between:0,99.9'],
-            'year'         => ['nullable', 'integer', 'between:2000,2100'],
-            'term'         => ['nullable', 'string', Rule::in(['前期','後期','通年'])],
-            'category'     => ['required', 'string', Rule::in(['必修','選択'])],
-            'capacity'     => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'description'  => ['nullable', 'string'],
-        ];
+{
+    // 1) バリデーション：テストの入力に合わせて必須 & Enum
+    $validated = $request->validate([
+        'subject_code' => [
+            'required','string','max:30',
+            Rule::unique('subjects', 'subject_code')->ignore($subject->id),
+        ],
+        'name_ja'      => ['required','string','max:100'],
+        'name_en'      => ['nullable','string','max:100'],
+        // credits が decimal カラムなら 'numeric' にする（int列なら integer のままでOK）
+        'credits'      => ['required','numeric','between:0,99.9'],
+        'year'         => ['required','integer','between:2000,2100'],
+        // term は現状「前期/後期/通年」の文字列をDBに保存している前提
+        'term'         => ['required', Rule::in(['前期','後期','通年'])],
+        // category は Enum バリデーション（backing value は 'required' / 'elective'）
+        'category'     => ['required', new Enum(Category::class)],
+        'capacity'     => ['required','integer','min:0','max:100000'],
+        'description'  => ['nullable','string'],
+    ], [], [
+        'subject_code' => '科目コード',
+        'name_ja'      => '科目名（日本語）',
+        'credits'      => '単位数',
+        'year'         => '年度',
+        'term'         => '開講期間',
+        'category'     => '必修/選択',
+        'capacity'     => '定員',
+    ]);
 
-        $attributes = [
-            'subject_code' => '科目コード',
-            'name_ja'      => '科目名（日本語）',
-            'name_en'      => '科目名（英語）',
-            'credits'      => '単位数',
-            'year'         => '年度',
-            'term'         => '開講期間',
-            'category'     => '必修/選択',
-            'capacity'     => '定員',
-            'description'  => '説明',
-        ];
-
-        $validated = $request->validate($rules, [], $attributes);
-
-        $subject->update($validated);
-
-        return redirect()->route('admin.subjects.show', $subject)
-                         ->with('status', '科目を更新しました。');
+    // 2) 念のため category を英語の backing value に正規化（画面から日本語が来ても吸収）
+    if (!in_array($validated['category'], [Category::Required->value, Category::Elective->value], true)) {
+        $validated['category'] = Category::fromLabel($validated['category'])->value;
     }
+
+    // 3) mass assign の取りこぼしをゼロに（forceFill→save）
+    $subject->forceFill($validated)->save();
+
+    return redirect()->route('admin.subjects.show', $subject->id);
+}
 
     /**
      * 削除

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Enums\Category;
 
 class Subject extends Model
 {
@@ -22,6 +23,12 @@ class Subject extends Model
         'category',
         'capacity',
         'description',
+    ];
+    protected $casts = [
+        'category' => Category::class,
+        'credits' => 'integer',
+        'year' => 'integer',
+        'capacity' => 'integer',
     ];
 
     public function enrollments(){
@@ -48,27 +55,31 @@ class Subject extends Model
     }
 
     public function getCategoryLabelAttribute(): string
-{
-    $raw = $this->category;
+    {
+    return $this->category instanceof Category
+        ? $this->category->label()
+        :(is_string($this->category) ? $this->category :'-');
 
-    if (is_string($raw)) {
-        $key = mb_strtolower(trim($raw));     // 'Elective' なども吸収
-    } elseif (is_bool($raw)) {
-        $key = $raw ? 'true' : 'false';
-    } elseif (is_numeric($raw)) {
-        $key = (string)(int)$raw;             // 0/1 を想定
-    } else {
-        $key = '';
+    }
+    public function setCategoryAttribute($value): void
+{
+    if ($value instanceof Category) {
+        $this->attributes['category'] = $value->value;
+        return;
     }
 
-    return match ($key) {
-        // 必修
-        '必修','必須','required','compulsory','core','1','true' => '必修',
-        // 選択
-        '選択','elective','optional','0','false'                 => '選択',
-        default => '-',
-    };
+    // 既に 'required' / 'elective' ならそのまま
+    if (is_string($value) && in_array($value, [Category::Required->value, Category::Elective->value], true)) {
+        $this->attributes['category'] = $value;
+        return;
+    }
 
-    
-}
+    // 日本語や 0/1/true/false 等が来ても Enum へ変換して保存
+    try {
+        $this->attributes['category'] = Category::fromLabel($value)->value;
+    } catch (\Throwable $e) {
+        // 不明値はとりあえず elective に倒す or 例外を投げる（お好みで）
+        $this->attributes['category'] = Category::Elective->value;
+    }
+    }
 }

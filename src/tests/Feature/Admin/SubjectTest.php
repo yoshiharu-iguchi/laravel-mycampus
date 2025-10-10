@@ -216,9 +216,12 @@ class SubjectTest extends TestCase
     ];
         $response = $this->actingAs($admin,'admin')->post(route('admin.subjects.store'),$new_data);
 
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
         $this->assertDatabaseHas('subjects',['subject_code' => 'OT999','name_ja' => 'テスト',]);
         $created = Subject::where('subject_code','OT999')->firstOrFail();
         $response->assertRedirect(route('admin.subjects.show',$created));
+        
     }
 
     // 未ログインのユーザーは管理者側の科目を更新できない
