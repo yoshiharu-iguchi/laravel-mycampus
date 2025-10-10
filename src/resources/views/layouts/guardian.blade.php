@@ -1,25 +1,45 @@
-@extends('layouts.guardian')
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>@yield('title','MyCampus')</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
-@section('title', trim($__env->yieldContent('title', '保護者メニュー')).' | 保護者')
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url('/') }}">MyCampus</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#gNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="gNav">
+      <ul class="navbar-nav me-auto">
+        @auth('guardian')
+          <li class="nav-item"><a class="nav-link" href="{{ route('guardian.home') }}">ホーム</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ route('guardian.profile.show') }}">プロフィール</a></li>
+        @endauth
+      </ul>
+      <div class="d-flex">
+        @auth('guardian')
+          <form method="POST" action="{{ route('guardian.logout') }}">
+            @csrf
+            <button class="btn btn-sm btn-outline-secondary">ログアウト</button>
+          </form>
+        @else
+          <a class="btn btn-sm btn-primary" href="{{ route('guardian.login') }}">ログイン</a>
+        @endauth
+      </div>
+    </div>
+  </div>
+</nav>
 
-@section('topnav')
-  @php
-    // 例：未読お知らせ件数などを badge に
-    $unread = isset($unread) ? $unread : null;
-  @endphp
-  @include('layouts.partials.topnav', [
-    'role' => 'guardian',
-    'logoutRoute' => 'guardian.logout', // ルート名はプロジェクト側に合わせる
-    'items' => [
-      ['label'=>'ホーム','route'=>'guardian.home'],
-      ['label'=>'お子さま情報','route'=>'guardian.student.show'],
-      ['label'=>'実習・面談','route'=>'guardian.internships.index'],
-      ['label'=>'お知らせ','route'=>'guardian.notices.index', 'badge'=>$unread],
-      ['label'=>'プロフィール','route'=>'guardian.profile.show'],
-    ],
-  ])
-@endsection
+<main class="container my-4">
+  @yield('content')
+</main>
 
-@section('content')
-  @yield('guardian-content')
-@endsection
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

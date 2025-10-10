@@ -13,9 +13,9 @@
           <div class="card-body">
             <h2 class="h6">（お子さま）出席サマリ</h2>
             <ul class="mb-0">
-              <li>出席：{{ $attendanceSummary['present'] }}</li>
-              <li>欠席：{{ $attendanceSummary['absent'] }}</li>
-              <li>遅刻：{{ $attendanceSummary['late'] }}</li>
+              <li>出席：{{ (int)($attendanceSummary['present'] ?? 0) }}</li>
+              <li>欠席：{{ (int)($attendanceSummary['absent'] ?? 0) }}</li>
+              <li>遅刻：{{ (int)($attendanceSummary['late'] ?? 0) }}</li>
             </ul>
           </div>
         </div>
@@ -26,9 +26,16 @@
           <div class="card-body">
             <h2 class="h6">（お子さま）成績サマリ</h2>
             <ul class="mb-0">
-              <li>科目数：{{ $gradeSummary['subjects'] }}</li>
-              <li>平均：{{ $gradeSummary['avg_score'] }}</li>
-            </ul>
+            <li>科目数：{{ (int)($gradeSummary['subjects'] ?? 0) }}</li>
+            <li>
+              平均：
+            @if(isset($gradeSummary['avg_score']) && is_numeric($gradeSummary['avg_score']))
+              {{ number_format($gradeSummary['avg_score'], 1) }}
+            @else
+            -
+            @endif
+          </li>
+        </ul>
           </div>
         </div>
       </div>

@@ -21,8 +21,8 @@
         @if($student)
           <dl class="row mb-0">
             <dt class="col-sm-4">氏名</dt><dd class="col-sm-8">{{ $student->name ?? '-' }}</dd>
-            <dt class="col-sm-4">学籍番号</dt><dd class="col-sm-8">{{ $student->student_number ?? '-' }}</dd>
-            <dt class="col-sm-4">住所</dt><dd class="col-sm-8">{{ $student->address ?? '-' }}</dd>
+            <dt class="col-sm-4">学籍番号</dt><dd class="col-sm-8" text-break>{{ $student->student_number ?? '-' }}</dd>
+            <dt class="col-sm-4">住所</dt><dd class="col-sm-8" text-break>{{ $student->address ?? '-' }}</dd>
           </dl>
         @else
           <div class="text-muted">学生情報が紐付いていません。</div>
