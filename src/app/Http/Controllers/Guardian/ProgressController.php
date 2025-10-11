@@ -14,11 +14,15 @@ class ProgressController extends Controller
     {
         // guardian->student_idが1対1で必ずある想定 リレーションを設定しておくとこれで取れる
         $guardian = auth('guardian')->user();
-        $student = optional($guardian)->student;
-        abort_if(!$student,404,'紐づく学生が見つかりません。');
+        
+        if (request()->filled('student') && (int)request('student') !== $guardian->student_id) {
+            abort(403);
+        }
 
         // 出席・成績の集計はStudent\ProgressControllerと同じ
+        $student = $guardian->student;
         $studentId = $student->id;
+        
 
         $att = Attendance::where('student_id',$studentId)
             ->selectRaw('subject_id')

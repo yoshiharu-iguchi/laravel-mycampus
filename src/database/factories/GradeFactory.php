@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use App\Models\Grade;
-use App\Models\Teacher;
 use App\Models\Subject;
 use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class GradeFactory extends Factory
@@ -15,16 +15,31 @@ class GradeFactory extends Factory
     public function definition(): array
     {
         return [
-            // 関連はここで create しない（使う側で .for(...) を指定できるように）
             'teacher_id'      => null,
             'subject_id'      => null,
             'student_id'      => null,
             'evaluation_date' => $this->faker->date('Y-m-d'),
-            'score'           => null,         // 未採点の初期値
+            'score'           => null,         
             'note'            => null,
             'recorded_at'     => null,
-            // created_at / updated_at はEloquentが自動付与するので不要
         ];
+    }
+
+    public function configure()
+    {
+        return $this->afterMaking(function (Grade $grade){
+            if (is_null($grade->teacher_id) && $grade->subject_id) {
+                $subject = Subject::find($grade->subject_id);
+                $grade->teacher_id = $subject?->teacher_id ?? Teacher::factory()->create()->id;
+            }
+        })
+        ->afterCreating(function (Grade $grade){
+            if (is_null($grade->teacher_id) && $grade->subject_id) {
+                $subject = Subject::find($grade->subject_id);
+                $grade->teacher_id = $subject?->teacher_id ?? Teacher::factory()->create()->id;
+                $grade->save();
+            }
+        });
     }
 
     /** 得点入力済みにしたい時のステート（デフォルト80点・コメント可） */

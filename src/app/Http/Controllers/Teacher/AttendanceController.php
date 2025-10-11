@@ -3,53 +3,117 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Subject;
-use App\Models\Attendance;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Subject;
+use App\Models\Enrollment;
+use App\Models\Attendance;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
-    public function index(Subject $subject, Request $request)
+    // GET /teacher/attendances
+    public function index(Request $request)
     {
-        $this->authorize('view', $subject);
+        $teacher = Auth::guard('teacher')->user();
 
-        $date = $request->query('date', now()->toDateString());
+        // ①subject が指定されてなければ、自分の科目一覧だけ出す（テスト：国語が見える・数学は見えない）
+        if (!$request->filled('subject') && !$request->filled('subject_id')) {
+            $subjects = Subject::where('teacher_id', $teacher->id)->pluck('name_ja');
+            return response()->view('teacher.attendances.index_list', compact('subjects'));
+        }
 
-        $students = $subject->students()
-            ->orderBy('students.name') // ← kana列が無い想定で name に統一（テーブル名も明示）
-            ->get(['students.id','students.name','students.student_number']);
+        // ②subject_id（または subject）と date を受ける
+        $subjectId = $request->input('subject') ?: $request->input('subject_id');
+        $date      = $request->input('date') ?: now()->toDateString();
 
-        $records = Attendance::where('subject_id', $subject->id)
-            ->whereDate('date', $date)
-            ->whereIn('student_id', $students->pluck('id'))
-            ->get()
-            ->keyBy('student_id');
+        $subject = Subject::findOrFail($subjectId);
 
-        return view('teacher.attendances.index', compact('subject','date','students','records'));
-    }
+        // ③他人の科目は 403
+        if ($subject->teacher_id !== $teacher->id) {
+            abort(403);
+        }
 
-    public function bulkUpdate(Subject $subject, Request $request)
-    {
-        $this->authorize('view', $subject);
+        // ④受講生を取得（enrollments 経由）
+        $enrolled = Enrollment::where('subject_id', $subject->id)->with('student')->get();
 
-        $data = $request->validate([
-            'date' => ['required','date'],
-            'rows' => ['required','array','min:1'],
-            'rows.*.student_id' => [
-                'required','integer',
-                Rule::exists('enrollments','student_id')
-                    ->where(fn($q) => $q->where('subject_id', $subject->id)),
-            ],
-            'rows.*.status' => ['required','integer'],
-        ]);
-
-        foreach ($data['rows'] as $row) {
-            Attendance::updateOrCreate(
-                ['subject_id' => $subject->id, 'student_id' => $row['student_id'], 'date' => $data['date']],
-                ['status' => $row['status']]
+        // ⑤当日の出席行を未作成なら作る（STATUS_UNRECORDED=4）
+        foreach ($enrolled as $en) {
+            Attendance::firstOrCreate(
+                [
+                    'student_id' => $en->student_id,
+                    'subject_id' => $subject->id,
+                    'date'       => $date,
+                ],
+                [
+                    'teacher_id'  => $teacher->id,
+                    'status'      => Attendance::STATUS_UNRECORDED,
+                    'recorded_at' => null,
+                    'note'        => null,
+                ]
             );
         }
-        return back()->with('status','出席を保存しました。');
+
+        // ⑥画面に渡す行（student を紐づけておく）
+        $rows = Attendance::where('subject_id', $subject->id)
+            ->whereDate('date', $date)
+            ->with('student')
+            ->orderBy('student_id')
+            ->get();
+
+        return view('teacher.attendances.index', [
+            'subject' => $subject,
+            'date'    => $date,
+            'rows'    => $rows,
+        ]);
+    }
+
+    // POST /teacher/attendances/bulk-update
+    public function bulkUpdate(Request $request)
+    {
+        $teacher = Auth::guard('teacher')->user();
+
+        $request->validate([
+            'subject_id' => ['required','integer','exists:subjects,id'],
+            'date'       => ['required','date'],
+            'rows'       => ['required','array','min:1'],
+            'rows.*.student_id' => ['required','integer','exists:students,id'],
+            'rows.*.status'     => ['required','integer','between:0,4'],
+        ]);
+
+        $subject = Subject::findOrFail($request->subject_id);
+
+        // 自分の科目以外は 403
+        if ($subject->teacher_id !== $teacher->id) {
+            abort(403);
+        }
+
+        // 「その学生がその科目の受講生か」をチェック（NGなら rows.n.student_id にバリデーションエラー）
+        $enrolledIds = Enrollment::where('subject_id', $subject->id)->pluck('student_id')->all();
+        foreach ($request->input('rows', []) as $idx => $row) {
+            if (! in_array($row['student_id'], $enrolledIds, true)) {
+                throw ValidationException::withMessages([
+                    "rows.$idx.student_id" => '学生がこの科目の受講者ではありません。',
+                ]);
+            }
+        }
+
+        // 保存
+        foreach ($request->rows as $row) {
+            Attendance::updateOrCreate(
+                [
+                    'student_id' => $row['student_id'],
+                    'subject_id' => $subject->id,
+                    'date'       => $request->date,
+                ],
+                [
+                    'teacher_id'  => $teacher->id,
+                    'status'      => (int)$row['status'],
+                    'recorded_at' => now(),
+                ]
+            );
+        }
+
+        return back()->with('status', '保存しました。');
     }
 }

@@ -37,26 +37,27 @@ class EnrollmentController extends Controller
         // 年度：未送信なら科目の年度 or 今年
         $year = $request->integer('year') ?: (int)($subject->year ?? now()->year);
 
-        // 学期：1/2/3 が来る想定なので Enum 化
-        $termEnum = Term::from((int)$request->input('term'));
+        $raw = (string)$request->input('term');
+        $termEnum = match ($raw) {
+            '前期','1' => \App\Enums\Term::First,
+            '後期','2' => \App\Enums\Term::Second,
+            '通年','3' => \App\Enums\Term::FullYear,
+            default => null,
+        };
+        if (!$termEnum) {
+            return redirect()->back()->withErrors(['default' => '学期の選択が正しくありません'])->withInput();
+        }
 
         // （任意）科目の学期制約と整合させたい場合
         $subjectTermRaw = (string)($subject->term ?? '');
         $map = [
-            '前期' => Term::First,
-            '後期' => Term::Second,
-            '通年' => Term::FullYear,
-            '1'    => Term::First,
-            '2'    => Term::Second,
-            '3'    => Term::FullYear,
+            '前期' => \App\Enums\Term::First,
+            '後期' => \App\Enums\Term::Second,
+            '通年' => \App\Enums\Term::FullYear,
+            '1'    => \App\Enums\Term::First,
+            '2'    => \App\Enums\Term::Second,
+            '3'    => \App\Enums\Term::FullYear,
         ];
-        if (isset($map[$subjectTermRaw]) &&
-            $map[$subjectTermRaw] !== Term::FullYear &&
-            $map[$subjectTermRaw] !== $termEnum) {
-            return back()
-                ->withErrors(['term' => 'この科目は『'.$map[$subjectTermRaw]->label().'』のみ履修可能です。'])
-                ->withInput();
-        }
 
         $enrollment = Enrollment::firstOrCreate(
             [
@@ -71,10 +72,9 @@ class EnrollmentController extends Controller
             ]
         );
 
-        return back()->with(
-            'status',
-            $enrollment->wasRecentlyCreated ? '履修登録しました' : '既に履修済みです'
-        );
+        return redirect()->route('student.enrollments.index')
+            ->with('status',$enrollment->wasRecentlyCreated ? '履修登録しました':'既に履修済みです');
+          
     }
 
     public function destroy(Enrollment $enrollment): RedirectResponse

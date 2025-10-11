@@ -24,7 +24,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>保護者 新規登録</h1>
+    <h1>保護者登録</h1>
 
     {{-- 学生情報を表示 --}}
     <div class="student-line">

@@ -18,11 +18,12 @@ class StoreEnrollmentRequest extends FormRequest
     {
         return [
             'subject_id' => ['required','integer','exists:subjects,id'],
-            // 年度はフォームに無ければ科目から補完するので nullable でもOK
-            'year'       => ['nullable','integer','min:1900','max:2100'],
-            // ← ここがポイント：1/2/3 のどれか（文字列"1","2","3"でもOK）
-            'term'       => ['required', new Enum(Term::class)],
-        ];
+            'year'       => ['nullable','integer'],
+            'term'       => ['required', function($attr,$value,$fail){
+            $ok = in_array((string)$value, ['前期','後期','通年','1','2','3'], true);
+            if (!$ok) $fail('学期の選択が正しくありません。');
+        }],
+    ];
     }
 
     public function attributes(): array

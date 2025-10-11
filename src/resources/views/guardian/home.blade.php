@@ -3,6 +3,7 @@
 @section('content')
 <div class="container py-4">
   <h1 class="h4 mb-3">保護者ホーム</h1>
+  <h2 class="h6 mt-3">学生：{{ $student->name ?? ($child->name ?? '不明') }}</h2>
 
   @if(!$student)
     <div class="alert alert-info">お子さまの情報がまだ紐付いていません。</div>

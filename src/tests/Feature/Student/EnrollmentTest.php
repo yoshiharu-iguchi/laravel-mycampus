@@ -7,6 +7,8 @@ use App\Models\Subject;
 use App\Models\Enrollment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Enums\Term;
+use App\Enums\EnrollmentStatus;
 
 class EnrollmentTest extends TestCase
 {
@@ -28,8 +30,8 @@ class EnrollmentTest extends TestCase
             'student_id'=>$student->id,
             'subject_id'=>$subject->id,
             'year'=>now()->year,
-            'term'=>'前期',
-            'status'=>'registered',
+            'term'=> Term::First->value,
+            'status'=> EnrollmentStatus::Registered->value,
         ]);
     }
 }

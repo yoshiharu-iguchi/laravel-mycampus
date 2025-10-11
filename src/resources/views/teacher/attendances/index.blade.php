@@ -1,8 +1,8 @@
 @extends('layouts.teacher')
-@section('title', $subject->name_ja.' | 出席')
+@section('title', ($subject->name_ja ?? '名称未設定').' | 出席')
 
 @section('content')
-<h1 class="h5 mb-3">{{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}｜出席管理</h1>
+<h1 class="h5 mb-3">{{ $subject->name_ja ?? $subject->name ?? '名称未設定' }}｜出席管理</h1>
 
 @if(session('status'))
   <div class="alert alert-success">{{ session('status') }}</div>
@@ -15,8 +15,9 @@
   </div>
 @endif
 
+{{-- 日付切替 --}}
 <form class="row gy-2 gx-2 align-items-end mb-3" method="get"
-      action="{{ route('teacher.attendances.index', ['subject'=>$subject->id]) }}">
+      action="{{ route('teacher.attendances.index', ['subject' => $subject->id]) }}">
   <div class="col-auto">
     <label class="form-label mb-0">日付</label>
     <input type="date" name="date" value="{{ $date }}" class="form-control form-control-sm">
@@ -30,8 +31,10 @@
   </div>
 </form>
 
-<form method="post" action="{{ route('teacher.attendances.bulkUpdate', ['subject'=>$subject->id]) }}">
+{{-- 一括更新 --}}
+<form method="post" action="{{ route('teacher.attendances.bulkUpdate') }}">
   @csrf
+  <input type="hidden" name="subject_id" value="{{ $subject->id }}">
   <input type="hidden" name="date" value="{{ $date }}">
 
   <div class="table-responsive">
@@ -40,22 +43,23 @@
         <tr>
           <th style="width:14%">学籍番号</th>
           <th>氏名</th>
-          <th style="width:22%">ステータス</th>
+          <th style="width:28%">ステータス</th>
         </tr>
       </thead>
       <tbody>
-      @forelse($students as $i => $st)
-        @php $rec = $records[$st->id] ?? null; $val = $rec->status ?? 4; @endphp
+      @forelse($rows as $i => $rec)
+        @php $val = (int)($rec->status ?? \App\Models\Attendance::STATUS_UNRECORDED); @endphp
         <tr>
-          <td class="text-nowrap">{{ $st->student_number }}</td>
-          <td>{{ $st->name }}</td>
+          <td class="text-nowrap">{{ $rec->student->student_number ?? '' }}</td>
+          <td>{{ $rec->student->name }}</td>
           <td>
-            <input type="hidden" name="rows[{{ $i }}][student_id]" value="{{ $st->id }}">
+            <input type="hidden" name="rows[{{ $i }}][student_id]" value="{{ $rec->student_id }}">
             <select name="rows[{{ $i }}][status]" class="form-select form-select-sm">
-              <option value="1" @selected($val==1)>出席</option>
-              <option value="2" @selected($val==2)>欠席</option>
-              <option value="3" @selected($val==3)>遅刻</option>
-              <option value="4" @selected($val==4)>未記録</option>
+              <option value="{{ \App\Models\Attendance::STATUS_PRESENT   }}" @selected($val===\App\Models\Attendance::STATUS_PRESENT)>出席</option>
+              <option value="{{ \App\Models\Attendance::STATUS_ABSENT    }}" @selected($val===\App\Models\Attendance::STATUS_ABSENT)>欠席</option>
+              <option value="{{ \App\Models\Attendance::STATUS_LATE      }}" @selected($val===\App\Models\Attendance::STATUS_LATE)>遅刻</option>
+              <option value="{{ \App\Models\Attendance::STATUS_EXCUSED   }}" @selected($val===\App\Models\Attendance::STATUS_EXCUSED)>公欠</option>
+              <option value="{{ \App\Models\Attendance::STATUS_UNRECORDED}}" @selected($val===\App\Models\Attendance::STATUS_UNRECORDED)>未記録</option>
             </select>
           </td>
         </tr>
