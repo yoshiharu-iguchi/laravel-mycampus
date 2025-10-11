@@ -1,39 +1,53 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>@yield('title','Teacher')</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap 5 CDN --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+@extends('layouts.base')
+
+@section('title', trim($__env->yieldContent('page-title', '教員メニュー')).' | Teacher')
+
+@push('head')
+  {{-- 教員画面の共通スタイル（学生/保護者と統一） --}}
   <style>
-    .container-narrow { max-width: 960px; }
+    body { background:#f8f9fa; }
+    .card { border-radius: 12px; }
+    .display-6 { font-size: 1.8rem; }
+
+    /* テーブル可読性：ヘッダー固定（任意） */
     .table thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+
+    /* 幅を少しタイトにしたい場合（任意） */
+    .container-narrow { max-width: 1120px; } /* 960→1100台に微調整 */
   </style>
-</head>
-<body>
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
-  <div class="container">
-    <a class="navbar-brand fw-semibold" href="{{ route('teacher.dashboard') }}">Teacher Console</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div id="nav" class="collapse navbar-collapse">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{{ route('teacher.subjects.index') }}">担当科目</a></li>
-      </ul>
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button class="btn btn-outline-secondary btn-sm">ログアウト</button>
-      </form>
+@endpush
+
+@section('topnav')
+  @include('layouts.partials.topnav', [
+    'role' => 'teacher',
+    'skin' => 'dark',                 // 学生・保護者と同じダークスキン
+    'logoutRoute' => 'logout',
+    'items' => [
+      ['label'=>'ホーム',   'route'=>'teacher.home',               'icon'=>'house'],
+      ['label'=>'科目',     'route'=>'teacher.subjects.index',     'icon'=>'book-open'],
+      ['label'=>'出席',     'route'=>'teacher.attendances.index',  'icon'=>'calendar-check'],
+      ['label'=>'成績',     'route'=>'teacher.grades.index',       'icon'=>'chart-column'],
+      // ['label'=>'プロフィール','route'=>'teacher.profile.show','icon'=>'id-badge'], // あれば
+    ],
+  ])
+@endsection
+
+@section('content')
+  <main class="container container-narrow py-4">
+    {{-- ページ見出し（学生/保護者と同じトーン） --}}
+    <div class="d-flex align-items-center justify-content-between mb-3"
+         style="border-bottom:1px solid #e5e7eb; padding-bottom:.5rem;">
+      <h1 class="h4 mb-0">@yield('page-title','教員メニュー')</h1>
+      @hasSection('actions')
+        <div class="d-flex gap-2">@yield('actions')</div>
+      @endif
     </div>
-  </div>
-</nav>
 
-<main class="container container-narrow py-4">
-  @yield('content')
-</main>
+    {{-- フラッシュ/エラー（共通パーツを再利用） --}}
+    @includeFirst(['layouts.partials.flash','partials.flash'])
+    @includeFirst(['layouts.partials.errors','partials.errors'])
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    {{-- 子ビュー本体 --}}
+    @yield('teacher-content')
+  </main>
+@endsection

@@ -1,98 +1,187 @@
-{{-- resources/views/teacher/grades/index.blade.php --}}
 @extends('layouts.teacher')
+@section('page-title', ($subject->name_ja ?? '名称未設定').' | 成績')
 
-@section('title','成績管理 | MyCampus')
+@push('head')
+  {{-- Font Awesome --}}
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+@endpush
 
-@section('content')
-  @php
-    // 現在の科目・評価日（GETのクエリ or Controllerで渡した値）
-    $currentSubjectId = request('subject_id') ?? ($subject->id ?? null);
-    $currentDate      = ($date ?? request('evaluation_date') ?? request('date')) ?: now()->toDateString();
+{{-- 右上のアクション --}}
+@section('actions')
+  <a class="btn btn-sm btn-outline-dark" href="{{ route('teacher.subjects.show',$subject) }}">
+    <i class="fa-solid fa-book-open"></i> 科目詳細へ戻る
+  </a>
+@endsection
 
-    // $grades を表示用配列に標準化
-    $rows = isset($rows) && is_iterable($rows) ? collect($rows) : collect($grades ?? []);
-    $rows = $rows->map(function($r){
-      return [
-        'id'           => data_get($r,'id'),
-        'student_name' => data_get($r,'student_name', data_get($r,'student.name','')),
-        'score'        => data_get($r,'score'), // 0-100 or null
-        'note'         => data_get($r,'note',''),
-      ];
-    })->values()->all();
-  @endphp
+@section('teacher-content')
+  {{-- JS が読むしきい値（エディタの赤線回避のため data-* で埋め込む） --}}
+  <meta id="grade-threshold"
+        data-high="80" data-mid="60">
 
-  {{-- バリデーションエラー表示（任意） --}}
-  @if ($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-    </div>
-  @endif
-
-  <div class="card shadow-sm">
+  {{-- 日付切替（= 評価日） --}}
+  <div class="card shadow-sm mb-3">
     <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h1 class="h5 mb-0"><i class="bi bi-card-checklist me-2"></i>成績管理</h1>
-
-        {{-- 絞り込み（GET）: 名前は evaluation_date に統一 --}}
-        <form method="GET" class="d-flex gap-2">
-          <select name="subject_id" class="form-select form-select-sm" style="min-width: 220px;">
-            <option value="">すべての科目</option>
-            @foreach(($subjects ?? []) as $sub)
-              <option value="{{ $sub->id }}" @selected((string)$currentSubjectId === (string)$sub->id)>
-                {{ $sub->name_ja ?? $sub->name ?? '科目' }}
-              </option>
-            @endforeach
-          </select>
-          <input type="date" name="evaluation_date" value="{{ $currentDate }}" class="form-control form-control-sm" style="min-width: 160px;">
-          <button class="btn btn-sm btn-outline-secondary" type="submit">絞り込み</button>
-        </form>
-      </div>
-
-      {{-- 一括保存（POST）: hidden も evaluation_date --}}
-      <form method="POST" action="{{ route('teacher.grades.bulkUpdate') }}">
-        @csrf
-        <input type="hidden" name="subject_id"      value="{{ $currentSubjectId }}">
-        <input type="hidden" name="evaluation_date" value="{{ $currentDate }}">
-
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-3">
-            <thead class="table-light">
-              <tr>
-                <th>学生</th>
-                <th style="width: 160px;">得点（0-100）</th>
-                <th>講評</th>
-              </tr>
-            </thead>
-            <tbody>
-              @forelse($rows as $i => $row)
-                <tr>
-                  <td class="text-nowrap">
-                    <input type="hidden" name="rows[{{ $i }}][id]" value="{{ $row['id'] ?? '' }}">
-                    {{ $row['student_name'] ?? '—' }}
-                  </td>
-                  <td>
-                    <input type="number" name="rows[{{ $i }}][score]" class="form-control form-control-sm"
-                           min="0" max="100" step="1" value="{{ $row['score'] }}" placeholder="例：80">
-                  </td>
-                  <td>
-                    <input type="text" name="rows[{{ $i }}][note]" class="form-control form-control-sm"
-                           value="{{ $row['note'] ?? '' }}" placeholder="講評（任意）">
-                  </td>
-                </tr>
-              @empty
-                <tr><td colspan="3" class="text-center text-muted py-4">表示する成績データがありません。</td></tr>
-              @endforelse
-            </tbody>
-          </table>
+      <form class="row gy-2 gx-2 align-items-end"
+            method="get"
+            action="{{ route('teacher.grades.index') }}">
+        <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+        <div class="col-auto">
+          <label class="form-label mb-0">評価日</label>
+          <input type="date" name="evaluation_date" value="{{ $date }}" class="form-control form-control-sm">
         </div>
-
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="text-muted small">表示件数：{{ count($rows) }}件</div>
-          <button type="submit" class="btn btn-dark btn-sm">
-            <i class="bi bi-save me-1"></i>一括保存
+        <div class="col-auto">
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-rotate"></i> 表示
           </button>
+        </div>
+        <div class="col-auto ms-auto">
+          <a class="btn btn-sm btn-outline-dark" href="{{ route('teacher.subjects.show',$subject) }}">
+            <i class="fa-solid fa-book-open"></i> 科目詳細へ戻る
+          </a>
         </div>
       </form>
     </div>
   </div>
+
+  {{-- フラッシュ/エラー --}}
+  @includeFirst(['layouts.partials.flash','partials.flash'])
+  @includeFirst(['layouts.partials.errors','partials.errors'])
+
+  {{-- 一括更新 --}}
+  <form method="POST" action="{{ route('teacher.grades.bulkUpdate') }}">
+    @csrf
+    <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+    <input type="hidden" name="evaluation_date" value="{{ $date }}">
+
+    <div class="card shadow-sm">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="fw-semibold"><i class="fa-solid fa-clipboard-list me-1"></i> 成績入力</span>
+        <div class="ms-auto d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-fill="empty">
+            <i class="fa-regular fa-circle"></i> 全員 未入力
+          </button>
+          <button class="btn btn-sm btn-outline-success" type="button" data-fill="100">
+            <i class="fa-solid fa-arrow-up-9-1"></i> 全員 100
+          </button>
+          <button class="btn btn-sm btn-outline-primary" type="button" data-fill="80">
+            <i class="fa-solid fa-arrow-up-wide-short"></i> 全員 80
+          </button>
+          <button class="btn btn-sm btn-outline-warning" type="button" data-fill="60">
+            <i class="fa-solid fa-equals"></i> 全員 60
+          </button>
+          <button class="btn btn-sm btn-outline-danger" type="button" data-fill="0">
+            <i class="fa-solid fa-arrow-down-1-9"></i> 全員 0
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:14%">学籍番号</th>
+                <th>氏名</th>
+                <th style="width:16%" class="text-end">スコア</th>
+                <th style="width:35%">備考</th>
+              </tr>
+            </thead>
+            <tbody>
+            @forelse($grades as $i => $rec)
+              {{-- $rec: student_id, student(name, student_number), score, note --}}
+              <tr>
+                <td class="text-nowrap">{{ $rec->student->student_number ?? '' }}</td>
+                <td class="text-nowrap">{{ $rec->student->name }}</td>
+                <td>
+                  <input type="hidden" name="rows[{{ $i }}][id]" value="{{ $rec->id }}">
+                  <input type="number"
+                         name="rows[{{ $i }}][score]"
+                         value="{{ is_numeric($rec->score ?? null) ? (int)$rec->score : '' }}"
+                         class="form-control form-control-sm score-input text-end"
+                         min="0" max="100" step="1"
+                         placeholder="—">
+                </td>
+                <td>
+                  <input type="text"
+                         name="rows[{{ $i }}][note]"
+                         value="{{ $rec->note ?? '' }}"
+                         class="form-control form-control-sm"
+                         maxlength="255"
+                         placeholder="任意メモ（例：小テスト#3）">
+                </td>
+              </tr>
+            @empty
+              <tr><td colspan="4" class="text-muted">在籍学生がいません。</td></tr>
+            @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex gap-2 justify-content-between align-items-center">
+        <div class="small text-muted">
+          <i class="fa-solid fa-circle text-success"></i> 80〜：良　
+          <i class="fa-solid fa-circle text-warning"></i> 60〜79　
+          <i class="fa-solid fa-circle text-danger"></i> 0〜59　
+          <i class="fa-regular fa-circle text-secondary"></i> 未入力
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-floppy-disk"></i> 一括保存
+          </button>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ route('teacher.subjects.show',$subject) }}">戻る</a>
+        </div>
+      </div>
+    </div>
+  </form>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+  // しきい値（配色用）を data-* から取得
+  const meta = document.getElementById('grade-threshold');
+  const THRESH = {
+    HIGH: parseInt(meta.dataset.high, 10), // 80
+    MID:  parseInt(meta.dataset.mid, 10),  // 60
+  };
+
+  // 一括ボタン（data-fill="0|60|80|100|empty"）
+  document.querySelectorAll('[data-fill]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.getAttribute('data-fill');
+      document.querySelectorAll('input.score-input').forEach(input => {
+        if (type === 'empty') {
+          input.value = '';
+        } else {
+          input.value = parseInt(type, 10);
+        }
+        tintRow(input);
+      });
+    });
+  });
+
+  // 行の色分け
+  function tintRow(input){
+    const tr = input.closest('tr');
+    tr.classList.remove('table-success','table-warning','table-danger','table-light');
+    const v = input.value === '' ? null : parseInt(input.value, 10);
+    if (v === null || Number.isNaN(v)) {
+      tr.classList.add('table-light'); // 未入力
+      return;
+    }
+    if (v >= THRESH.HIGH)      tr.classList.add('table-success');
+    else if (v >= THRESH.MID)  tr.classList.add('table-warning');
+    else                       tr.classList.add('table-danger');
+  }
+
+  // 初期色付け＋変更時
+  document.querySelectorAll('input.score-input').forEach(input => {
+    tintRow(input);
+    input.addEventListener('input', () => tintRow(input));
+    input.addEventListener('change', () => tintRow(input));
+  });
+})();
+</script>
+@endpush

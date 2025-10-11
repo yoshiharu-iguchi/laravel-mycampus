@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Attendance, Grade, Subject};
+use Illuminate\Support\Facades\Auth;
+use App\Models\Enrollment;
+use App\Models\Attendance;
+use App\Models\Grade;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -22,7 +26,8 @@ class HomeController extends Controller
                 SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS present_count,
                 SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS absent_count,
                 SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS late_count,
-                SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS excused_count,
+                SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS leave_early_count,
+                SUM(CASE WHEN status = 5 THEN 1 ELSE 0 END) AS excused_count,
                 COUNT(*) AS total_rows
             ")
             ->groupBy('subject_id')
@@ -39,8 +44,9 @@ class HomeController extends Controller
         // 4) 最新スコア（科目ごとに1件）
         $latestBySubject = Grade::where('student_id', $studentId)
             ->orderBy('subject_id')
+            ->orderByDesc('evaluation_date')
             ->orderByDesc('recorded_at')
-            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('subject_id')
             ->map(fn($rows) => optional($rows->first())->score);

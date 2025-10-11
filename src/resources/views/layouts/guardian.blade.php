@@ -1,45 +1,40 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>@yield('title','MyCampus')</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+@extends('layouts.base')
 
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-  <div class="container">
-    <a class="navbar-brand" href="{{ url('/') }}">MyCampus</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#gNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="gNav">
-      <ul class="navbar-nav me-auto">
-        @auth('guardian')
-          <li class="nav-item"><a class="nav-link" href="{{ route('guardian.home') }}">ホーム</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ route('guardian.profile.show') }}">プロフィール</a></li>
-        @endauth
-      </ul>
-      <div class="d-flex">
-        @auth('guardian')
-          <form method="POST" action="{{ route('guardian.logout') }}">
-            @csrf
-            <button class="btn btn-sm btn-outline-secondary">ログアウト</button>
-          </form>
-        @else
-          <a class="btn btn-sm btn-primary" href="{{ route('guardian.login') }}">ログイン</a>
-        @endauth
-      </div>
-    </div>
+@section('title', (trim($__env->yieldContent('title', '保護者ホーム')) ?: '保護者ホーム').' | Guardian')
+
+@push('head')
+  <style>
+    .page-header{
+      display:flex; gap:16px; align-items:center; justify-content:space-between;
+      border-bottom:1px solid #e5e7eb; padding-bottom:.5rem;
+    }
+  </style>
+@endpush
+
+@section('topnav')
+  @include('layouts.partials.topnav', [
+    'role' => 'guardian',
+    'skin' => 'dark',                  // ← student と揃える
+    'logoutRoute' => 'logout',
+    'items' => [
+      ['label'=>'ホーム',   'route'=>'guardian.home',              'icon'=>'house'],
+      ['label'=>'出席',     'route'=>'guardian.attendances.index','icon'=>'calendar-check'],
+      ['label'=>'成績',     'route'=>'guardian.grades.index',     'icon'=>'chart-column'],
+      ['label'=>'プロフィール','route'=>'guardian.profile.show', 'icon'=>'user'],
+    ],
+  ])
+@endsection
+
+@section('content')
+  <div class="page-header mb-3">
+    <h1 class="h4 mb-0">@yield('page-title', '保護者メニュー')</h1>
+    @hasSection('actions')
+      <div class="d-flex align-items-center gap-2">@yield('actions')</div>
+    @endif
   </div>
-</nav>
 
-<main class="container my-4">
-  @yield('content')
-</main>
+  @includeFirst(['layouts.partials.flash','partials.flash'])
+  @includeFirst(['layouts.partials.errors','partials.errors'])
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+  @yield('guardian-content')
+@endsection

@@ -1,10 +1,9 @@
 @extends('layouts.base')
 
-@section('title', trim($__env->yieldContent('title', 'Student Menu')).' | Student')
+@section('title', (trim($__env->yieldContent('title', '学生ホーム')) ?: '学生ホーム').' | Student')
 
 @push('head')
   <style>
-    /* adminレイアウトのページヘッダ風 */
     .page-header{
       display:flex; gap:16px; align-items:center; justify-content:space-between;
       border-bottom:1px solid #e5e7eb; padding-bottom:.5rem;
@@ -15,38 +14,29 @@
 @section('topnav')
   @include('layouts.partials.topnav', [
     'role' => 'student',
-    'logoutRoute' => 'student.logout',
-    'skin' => 'admin', // Admin と同じダークスキン
+    'skin' => 'dark',                 // ← guardian と揃える
+    'logoutRoute' => 'logout',        // 共通POST logout
     'items' => [
-      ['label'=>'Dashboard','route'=>'student.home','icon'=>'house-door'],
-      ['label'=>'Search & Request','route'=>'student.tr.create', 'badge'=>$trCount ?? null,'icon'=>'geo-alt'],
-      ['label'=>'Requests','route'=>'student.tr.index','icon'=>'list-check'],
-      ['label'=>'Facility','route'=>'student.facilities.index','icon'=>'building'],
-      ['label'=>'Profile','route'=>'student.profile.show','icon'=>'person-circle'],
+      ['label'=>'ホーム',   'route'=>'student.home',              'icon'=>'house'],
+      ['label'=>'出席',     'route'=>'student.attendances.index','icon'=>'calendar-check'],
+      ['label'=>'成績',     'route'=>'student.grades.index',     'icon'=>'chart-column'],
+      ['label'=>'プロフィール','route'=>'student.profile.show', 'icon'=>'user'],
     ],
   ])
 @endsection
 
+
 @section('content')
   <div class="page-header mb-3">
-    <h1 class="h4 mb-0">@yield('title','学生メニュー')</h1>
-
-    {{-- adminの @yield('actions') 相当。student側はどちらでも記述可 --}}
+    <h1 class="h4 mb-0">@yield('page-title', '学生メニュー')</h1>
     @hasSection('actions')
       <div class="d-flex align-items-center gap-2">@yield('actions')</div>
-    @elseif (View::hasSection('student-actions'))
-      <div class="d-flex align-items-center gap-2">@yield('student-actions')</div>
     @endif
   </div>
 
-  {{-- フラッシュ/エラー（layouts/partials または root/partials どちらにも対応） --}}
   @includeFirst(['layouts.partials.flash','partials.flash'])
   @includeFirst(['layouts.partials.errors','partials.errors'])
 
-  {{-- 子ビュー本体 --}}
+  {{-- 子ビューがここに内容を入れる --}}
   @yield('student-content')
-@endsection
-
-@section('content')
-    @yield('student-content')
 @endsection

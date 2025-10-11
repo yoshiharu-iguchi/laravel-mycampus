@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use App\Providers\RouteServiceProvider;
-use App\Http\Controllers\Teacher\AttendanceController;
+
+// 教員の出席コントローラはクラス名が衝突しやすいので alias
+use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +22,8 @@ Route::get('/', fn () => view('welcome'));
 
 require __DIR__.'/auth.php';
 
-// ────────────── 共通・認証系（テスト用の簡易画面） ──────────────
+/* ───────────── 共通・認証系（簡易画面） ───────────── */
+
 Route::get('/register', fn () => response('Student Register', 200))
     ->middleware('guest')->name('register');
 
@@ -113,8 +116,8 @@ Route::post('/logout', function () {
 Route::middleware('auth')->match(['put','patch'], '/password', [\App\Http\Controllers\Auth\PasswordController::class,'update'])
     ->name('password.update');
 
+/* ───────────── 学生 ───────────── */
 
-// ────────────── 学生 ──────────────
 Route::prefix('student')->as('student.')->middleware('auth:student')->group(function () {
     Route::get('home', [\App\Http\Controllers\Student\HomeController::class,'index'])->name('home');
     Route::get('profile', [\App\Http\Controllers\Student\ProfileController::class,'show'])->name('profile.show');
@@ -122,32 +125,41 @@ Route::prefix('student')->as('student.')->middleware('auth:student')->group(func
     Route::get('subjects', [\App\Http\Controllers\Student\SubjectController::class,'index'])->name('subjects.index');
     Route::get('subjects/{subject}', [\App\Http\Controllers\Student\SubjectController::class,'show'])->name('subjects.show');
 
+    // 出席・成績（閲覧）
+    Route::get('attendances', [\App\Http\Controllers\Student\AttendanceController::class,'index'])->name('attendances.index');
+    Route::get('grades',      [\App\Http\Controllers\Student\GradeController::class,'index'])->name('grades.index');
+
     Route::get('enrollments', [\App\Http\Controllers\Student\EnrollmentController::class,'index'])->name('enrollments.index');
     Route::post('enrollments', [\App\Http\Controllers\Student\EnrollmentController::class,'store'])->name('enrollments.store');
     Route::delete('enrollments/{enrollment}', [\App\Http\Controllers\Student\EnrollmentController::class,'destroy'])->name('enrollments.destroy');
 
     Route::get('progress', [\App\Http\Controllers\Student\ProgressController::class,'index'])->name('progress.index');
 
+    // 交通費申請
     Route::get('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class,'index'])->name('tr.index');
     Route::get('transport-requests/create', [\App\Http\Controllers\Student\TransportRequestController::class, 'create'])->name('tr.create');
     Route::post('transport-requests/search', [\App\Http\Controllers\Student\TransportRequestController::class,'search'])->name('tr.search');
     Route::post('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class, 'store'])->name('tr.store');
 
+    // 施設一覧
     Route::get('facilities', [\App\Http\Controllers\Student\FacilityController::class,'index'])->name('facilities.index');
 });
 
+/* ───────────── 保護者（ログイン後） ───────────── */
 
-// ────────────── 保護者（ログイン後） ──────────────
 Route::prefix('guardian')->as('guardian.')->middleware('auth:guardian')->group(function () {
     Route::get('home', [\App\Http\Controllers\Guardian\HomeController::class,'index'])->name('home');
     Route::get('profile', [\App\Http\Controllers\Guardian\ProfileController::class,'show'])->name('profile.show');
     Route::get('progress', [\App\Http\Controllers\Guardian\ProgressController::class,'index'])->name('progress.index');
     Route::get('email/verify', fn () => response('Guardian Verify Email Notice',200))->name('verification.notice');
 
+    // 出席・成績（閲覧：自分の子のみ）
     Route::get('attendances', [\App\Http\Controllers\Guardian\AttendanceController::class,'index'])->name('attendances.index');
+    Route::get('grades',      [\App\Http\Controllers\Guardian\GradeController::class,'index'])->name('grades.index');
 });
 
-// ────────────── 保護者：トークン登録（未ログイン） ──────────────
+/* ───────────── 保護者：トークン登録（未ログイン） ───────────── */
+
 Route::prefix('guardian')->as('guardian.')->middleware(['guest:guardian','throttle:30,1'])->group(function () {
     Route::get('register/{token}', [\App\Http\Controllers\Guardian\RegisterWithTokenController::class,'show'])
         ->where('token','[A-Za-z0-9]{64}')
@@ -161,8 +173,8 @@ Route::prefix('guardian')->as('guardian.')->middleware(['guest:guardian','thrott
         ->name('register.complete');
 });
 
+/* ───────────── 管理者 ───────────── */
 
-// ────────────── 管理者 ──────────────
 Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function () {
     Route::redirect('/','dashboard');
     Route::get('dashboard', [\App\Http\Controllers\Admin\HomeController::class,'index'])->name('dashboard');
@@ -172,9 +184,10 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)
         ->only(['index','show','edit','update','destroy']);
 
-    // Teachers（フルリソース：index/show/edit/update/destroy…を含む）
+    // Teachers（フルリソース）
     Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
-    // Subjects（フルリソース：store/update/destroy を含む）
+
+    // Subjects（フルリソース）
     Route::resource('subjects', \App\Http\Controllers\Admin\SubjectController::class);
 
     // Enrollments (閲覧)
@@ -191,8 +204,8 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::patch('transport-requests/{tr}/reject', [\App\Http\Controllers\Admin\TransportRequestAdminController::class,'reject'])->name('tr.reject');
 });
 
+/* ───────────── 教員 ───────────── */
 
-// ────────────── 教員 ──────────────
 Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(function () {
     Route::redirect('/','dashboard');
     Route::get('dashboard', [\App\Http\Controllers\Teacher\HomeController::class,'index'])->name('dashboard');
@@ -209,15 +222,12 @@ Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(func
         ->middleware('can:view,subject')
         ->name('enrollments.index');
 
-    // 出席
-    Route::get('attendances', [AttendanceController::class,'index'])
-        ->name('attendances.index');
-    Route::get('attendances/{subject}', [AttendanceController::class, 'index'])
-            ->name('attendances.bySubject');
-    Route::post('attendances/{subject}/bulk-update', [AttendanceController::class,'bulkUpdate'])
-        ->name('attendances.bulkUpdate');
+    // 出席（教師用）
+    Route::get('attendances', [TeacherAttendanceController::class,'index'])->name('attendances.index');
+    Route::get('attendances/{subject}', [TeacherAttendanceController::class, 'index'])->name('attendances.bySubject');
+    Route::post('attendances/{subject}/bulk-update', [TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
 
-    // 成績
+    // 成績（教師用）
     Route::get('grades', [\App\Http\Controllers\Teacher\GradeController::class,'index'])->name('grades.index');
     Route::post('grades/bulk-update', [\App\Http\Controllers\Teacher\GradeController::class,'bulkUpdate'])->name('grades.bulkUpdate');
 });

@@ -10,7 +10,7 @@ class Attendance extends Model
 {
     use HasFactory;
 
-    // ← テストに合わせた順番（未記録が0）
+   
     public const STATUS_UNRECORDED = 0; // 未記録
     public const STATUS_PRESENT    = 1; // 出席
     public const STATUS_LATE       = 2; // 遅刻
@@ -20,7 +20,7 @@ class Attendance extends Model
     protected $fillable = [
         'student_id',
         'subject_id',
-        // 'teacher_id', // テーブルに無ければ触らない方が安全
+        'teacher_id',
         'date',
         'status',
         'note',
