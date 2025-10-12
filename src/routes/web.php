@@ -226,6 +226,7 @@ Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(func
     Route::get('attendances', [TeacherAttendanceController::class,'index'])->name('attendances.index');
     Route::get('attendances/{subject}', [TeacherAttendanceController::class, 'index'])->name('attendances.bySubject');
     Route::post('attendances/{subject}/bulk-update', [TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
+    Route::post('attendances/bulk-update',[TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
 
     // 成績（教師用）
     Route::get('grades', [\App\Http\Controllers\Teacher\GradeController::class,'index'])->name('grades.index');

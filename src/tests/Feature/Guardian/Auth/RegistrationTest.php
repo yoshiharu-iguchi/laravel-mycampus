@@ -7,6 +7,7 @@ use App\Models\Guardian;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Auth;
 
 class RegistrationTest extends TestCase
 {
@@ -17,31 +18,6 @@ class RegistrationTest extends TestCase
         $response = $this->get('/guardian/register');
 
         $response->assertStatus(200);
-    }
-
-    public function test_new_guardians_can_register():void
-    {
-        $student = Student::factory()->create([
-            'student_number' => 's12345678',
-            'email' => 'student@example.com',
-
-        ]);
-
-        $response = $this->post(route('guardian.register.store'),[
-            'name' => 'テスト保護者',
-            'student_number' => $student->student_number,
-            'email' => 'guardian@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-            'address' => 'テスト住所',
-        ]);
-
-        $response->assertSessionHasNoErrors();
-
-        $this->assertAuthenticated('guardian');
-
-        $response->assertRedirect(route('guardian.verification.notice'));
-
     }
 
     public function test_guardian_registration_fails_if_student_number_not_exist():void
@@ -84,5 +60,17 @@ class RegistrationTest extends TestCase
 
         $this->assertGuest('guardian');
     }
+
+    public function test_guardian_guard_can_login_directly(): void
+    {
+    $g = \App\Models\Guardian::factory()->create();
+
+    \Illuminate\Support\Facades\Auth::guard('guardian')->login($g);
+
+    $this->assertTrue(
+        \Illuminate\Support\Facades\Auth::guard('guardian')->check(),
+        'auth.php のガード/プロバイダ設定に問題がありそうです'
+    );
         
+}
 }

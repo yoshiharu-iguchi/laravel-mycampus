@@ -41,6 +41,7 @@
             <i class="fa-solid fa-book-open"></i> 科目詳細へ戻る
           </a>
         </div>
+        <input type="hidden" name="subject_id" value="{{ $subject->id }}">
       </form>
     </div>
   </div>
