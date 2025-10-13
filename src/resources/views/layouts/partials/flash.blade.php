@@ -1,9 +1,13 @@
-@if(session('status'))
-  <div class="alert alert-success">{{ session('status') }}</div>
-@endif
-@if(session('warning'))
-  <div class="alert alert-warning">{{ session('warning') }}</div>
-@endif
-@if(session('error'))
-  <div class="alert alert-danger">{{ session('error') }}</div>
-@endif
+@php
+  $map = ['status'=>'success','success'=>'success','info'=>'info','warning'=>'warning','error'=>'danger','danger'=>'danger'];
+@endphp
+@foreach($map as $key => $bs)
+  @if(session()->has($key))
+    @php($msg = session()->pull($key))
+    @if($msg)
+      <div class="alert alert-{{ $bs }} small mb-2" role="alert">
+        {{ is_array($msg) ? implode(' ', $msg) : $msg }}
+      </div>
+    @endif
+  @endif
+@endforeach

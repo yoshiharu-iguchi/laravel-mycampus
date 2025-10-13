@@ -45,7 +45,6 @@
   </div>
 
   {{-- フラッシュ/エラー --}}
-  @includeFirst(['layouts.partials.flash','partials.flash'])
   @includeFirst(['layouts.partials.errors','partials.errors'])
 
   {{-- 一括更新 --}}

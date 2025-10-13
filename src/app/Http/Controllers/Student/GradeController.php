@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Grade;
 
 class GradeController extends Controller
 {
@@ -11,14 +12,14 @@ class GradeController extends Controller
     {
         $student = auth('student')->user();
 
-        // モデルが未整備なら空配列でもOK（まずは赤線を消す＆画面を出す）
-        // $grades = Grade::with(['subject:id,name_ja,name_en','teacher:id,name'])
-        //     ->where('student_id', $student->id)
-        //     ->when($request->filled('subject_id'), fn($q)=>$q->where('subject_id',$request->subject_id))
-        //     ->orderByDesc('updated_at')
-        //     ->paginate(20);
+        $subjectId = $request->integer('subject_id');
 
-        $grades = collect([]); // ←暫定
+        $grades = Grade::with(['subject:id,name_ja,name_en','teacher:id,name'])
+            ->where('student_id', $student->id)
+            ->when($subjectId,fn($q) => $q->where('subject_id',$subjectId))
+            ->orderByDesc('evaluation_date')
+            ->orderByDesc('id')
+            ->get();
 
         return view('student.grades.index', compact('grades'));
     }
