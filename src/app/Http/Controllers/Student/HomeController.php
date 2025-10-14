@@ -11,6 +11,7 @@ use App\Models\Grade;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use App\Notifications\TransportRequestStatusNotification;
+use App\Models\TransportRequest;
 
 class HomeController extends Controller
 {
@@ -96,17 +97,29 @@ class HomeController extends Controller
         'presentTotal' => array_sum(array_column($rows, 'present')),
     ];
 
-    // 7) 交通費申請の「未読通知」件数（バッジ用）
-    $transportUnread = $student->unreadNotifications()
-        ->where('type', TransportRequestStatusNotification::class)
-        ->count();
+    // 7) 交通費申請のステータス(最新1件)→バッジ表示用
+    $lastTr = TransportRequest::where('student_id',$studentId)
+                ->latest('id') //created_atでもok
+                ->first();
+
+    $transportBadge = $lastTr
+        ? [
+            'text' => $lastTr->status->label(), //Enumの日本語ラベル:申請中/承認/却下
+            'class' => match($lastTr->status) {
+                TransportRequestStatus::Approved => 'bg-success',
+                TransportRequestStatus::Pending => 'bg-warning text-dark',
+                TransportRequestStatus::Rejected => 'bg-danger',
+            },
+        ]
+        :['text' => '申請なし','class' => 'bg-secondary'];
+    
 
     // 8) ここで1回だけ返す
     return view('student.home', [
         'student'         => $student,
         'rows'            => $rows,
         'kpi'             => $kpi,
-        'transportUnread' => $transportUnread,
+        'transportBadge' => $transportBadge,
     ]);
     }
 

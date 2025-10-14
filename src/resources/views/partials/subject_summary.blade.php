@@ -38,8 +38,7 @@
               <th class="text-end">公欠</th>
               <th class="text-end">未記録</th>
               <th class="text-end">出席率</th>
-              <th class="text-end">平均点</th>
-              <th class="text-end">最新点</th>
+              <th class="text-end">点数</th>
             </tr>
           </thead>
           <tbody>
@@ -66,7 +65,6 @@
                   {{ is_null($rate) ? '—' : number_format($rate, 1).'%' }}
                 </span>
               </td>
-              <td class="text-end">{{ is_null($r['avgScore'] ?? null) ? '—' : $r['avgScore'] }}</td>
               <td class="text-end">{{ is_null($r['latestScore'] ?? null) ? '—' : $r['latestScore'] }}</td>
             </tr>
           @endforeach

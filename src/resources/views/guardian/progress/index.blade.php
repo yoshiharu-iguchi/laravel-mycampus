@@ -62,9 +62,7 @@ gi
             <td class="text-center">
               {{ is_null($r['latestScore']) ? '—' : $r['latestScore'] }}
             </td>
-            <!-- <td class="text-center">
-              {{ is_null($r['avgScore']) ? '—' : $r['avgScore'] }}
-            </td> -->
+            
           </tr>
         @empty
           <tr>
