@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 // 教員の出席コントローラはクラス名が衝突しやすいので alias
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
+use App\Http\Controllers\Teacher\ProfileController as TeacherProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -254,11 +255,16 @@ Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(func
 
     // 出席（教師用）
     Route::get('attendances', [TeacherAttendanceController::class,'index'])->name('attendances.index');
-    Route::get('attendances/{subject}', [TeacherAttendanceController::class, 'index'])->name('attendances.bySubject');
-    Route::post('attendances/{subject}/bulk-update', [TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
-    Route::post('attendances/bulk-update',[TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
+    Route::get('attendances/{subject}', [TeacherAttendanceController::class, 'index'])->whereNumber('subject')->name('attendances.bySubject');
+    Route::post('attendances/{subject}/bulk-update', [TeacherAttendanceController::class,'bulkUpdate'])->whereNumber('subject')->name('attendances.bulkUpdate');
+    // Route::post('attendances/bulk-update',[TeacherAttendanceController::class,'bulkUpdate'])->name('attendances.bulkUpdate');
 
     // 成績（教師用）
     Route::get('grades', [\App\Http\Controllers\Teacher\GradeController::class,'index'])->name('grades.index');
     Route::post('grades/bulk-update', [\App\Http\Controllers\Teacher\GradeController::class,'bulkUpdate'])->name('grades.bulkUpdate');
+
+    Route::get('profile',[TeacherProfileController::class,'show'])->name('profile.show');
+    Route::get('profile/edit',  [TeacherProfileController::class,'edit'])->name('profile.edit');
+    Route::patch('profile',     [TeacherProfileController::class,'update'])->name('profile.update');
+    Route::delete('profile',    [TeacherProfileController::class,'destroy'])->name('profile.destroy');
 });

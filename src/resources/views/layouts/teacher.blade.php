@@ -24,10 +24,7 @@
     'logoutRoute' => 'logout',
     'items' => [
       ['label'=>'ホーム',   'route'=>'teacher.home',               'icon'=>'house'],
-      ['label'=>'科目',     'route'=>'teacher.subjects.index',     'icon'=>'book-open'],
-      ['label'=>'出席',     'route'=>'teacher.attendances.index',  'icon'=>'calendar-check'],
-      ['label'=>'成績',     'route'=>'teacher.grades.index',       'icon'=>'chart-column'],
-      // ['label'=>'プロフィール','route'=>'teacher.profile.show','icon'=>'id-badge'], // あれば
+      ['label'=>'プロフィール','route'=>'teacher.profile.show','icon'=>'id-badge'], // あれば
     ],
   ])
 @endsection

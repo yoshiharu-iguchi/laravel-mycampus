@@ -31,6 +31,7 @@
     <div id="mainNav" class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto align-items-lg-center">
         @foreach($items as $it)
+          @continue(!\Illuminate\Support\Facades\Route::has($it['route']))
           @php
             $active = request()->routeIs($it['route']) ? 'active' : '';
           @endphp
