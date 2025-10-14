@@ -99,25 +99,35 @@ class GradeController extends Controller
 
         // 入力が空なら「変更なし」とみなしてスキップ
         $scoreRaw = $row['score'] ?? null;     // '' or null or '80'
-        $noteRaw  = $row['note']  ?? null;     // '' or null or '...'
+        $noteRaw  = isset($row['note'])  ? trim((string)$row['note']) :null;     // '' or null or '...'
 
-        $hasScoreInput = ($scoreRaw !== null && $scoreRaw !== ''); // 数値が送られた？
-        $hasNoteInput  = ($noteRaw  !== null && $noteRaw  !== ''); // 文字が送られた？
+        $scoreProvided = ($scoreRaw !== null && $scoreRaw !== ''); // 数値が送られた？
+        $noteProvided  = ($noteRaw  !== null && $noteRaw  !== ''); // 文字が送られた？
 
-        if (!$hasScoreInput && !$hasNoteInput) {
+        if (!$scoreProvided && !$noteProvided) {
             // 何も入力していなければ何もしない（件数に含めない）
             continue;
         }
+        // クリア条件：「未評価」が指定されたらscoreとrecorded_atをクリア
+        $shouldClear = ($noteRaw === '未評価');
 
-        // 新値を決定：未入力の項目は現状維持
-        $newScore = $hasScoreInput ? (int)$scoreRaw : $current->score;
-        $newNote  = $hasNoteInput  ? (string)$noteRaw : $current->note;
+        if ($shouldClear) {
+            $newScore = null;
+            $newRecordedAt = null;
+        } else {
+            if ($scoreProvided) {
+                $newScore = is_numeric($scoreRaw) ? (int)$scoreRaw : null;
+                $newRecordedAt = is_null($newScore) ? null : $now;
 
-        // recorded_at は「スコアが入力された時だけ」更新／無変更時は維持
-        $newRecordedAt = $current->recorded_at;
-        if ($hasScoreInput) {
-            $newRecordedAt = is_null($newScore) ? null : $now;
+            } else {
+                $newScore = $current->score;
+                $newRecordedAt = $current->recorded_at;
+            }
         }
+
+        
+        $newNote  = ($noteRaw === '' ? null : $noteRaw);
+
 
         // 何か変化があるときだけ UPDATE
         $changed = (

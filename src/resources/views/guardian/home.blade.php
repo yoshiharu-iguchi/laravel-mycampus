@@ -14,7 +14,7 @@
     <div class="alert alert-warning">お子様の登録がまだ完了していません。</div>
   @else
     <p class="text-muted mb-2">{{ $student->name }} さんの学習状況</p>
-    @include('partials.kpi_cards', ['kpi' => $kpi])
+  
     @include('partials.subject_summary', ['title' => '科目別の出席・成績状況', 'rows' => $rows])
   @endif
 @endsection

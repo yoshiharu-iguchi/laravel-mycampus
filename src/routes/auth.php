@@ -28,12 +28,12 @@ Route::middleware('guest:student')->group(function () {
 
 Route::middleware('auth:student')->group(function () {
     // メール認証（未認証ユーザー向けの案内／再送）
-    Route::get('student/verify-email', [EmailVerificationPromptController::class, '__invoke'])
-        ->name('student.verification.notice');
+    // Route::get('student/verify-email', [EmailVerificationPromptController::class, '__invoke'])
+    //     ->name('student.verification.notice');
 
-    Route::get('student/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
-        ->middleware(['signed','throttle:6,1'])
-        ->name('student.verification.verify');
+    // Route::get('student/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
+    //     ->middleware(['signed','throttle:6,1'])
+    //     ->name('student.verification.verify');
 
     Route::post('student/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
         ->middleware('throttle:6,1')

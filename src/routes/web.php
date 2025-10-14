@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use App\Providers\RouteServiceProvider;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+
 
 // 教員の出席コントローラはクラス名が衝突しやすいので alias
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
@@ -119,6 +121,34 @@ Route::middleware('auth')->match(['put','patch'], '/password', [\App\Http\Contro
 /* ───────────── 学生 ───────────── */
 
 Route::prefix('student')->as('student.')->middleware('auth:student')->group(function () {
+    Route::get('email/verify',function () {
+        return view('student.auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('email/verify/{id}/{hash}',function(EmailVerificationRequest $request) {
+        $request->fulfill();
+
+        /** @var \App\Models\Student $student */
+        $student = $request->user('student');
+
+        [$token,$expiresAt] = \App\Models\Student::issueGuardianToken(30);
+        $student->forceFill([
+            'guardian_registration_token' => $token,
+        ])->save();
+
+        $to = optional($student->guardian)->email ?: $student->email;
+        \Illuminate\Support\Facades\Mail::to($to)
+        ->send(new \App\Mail\GuardianInviteMail($student));
+
+        return redirect()->route('student.home')
+            ->with('status','メール認証が完了しました。保護者招待メールを送信しました。');
+    })->middleware(['signed','throttle:6,1'])->name('verification.verify');
+
+    Route::post('email/verification-notification',function (Request $request) {
+        $request->user('student')->sendEmailVerificationNotification();
+        return back()->with('status','認証メールを再送しました。');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+
     Route::get('home', [\App\Http\Controllers\Student\HomeController::class,'index'])->name('home');
     Route::get('profile', [\App\Http\Controllers\Student\ProfileController::class,'show'])->name('profile.show');
 

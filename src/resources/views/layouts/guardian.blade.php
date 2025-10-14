@@ -18,8 +18,6 @@
     'logoutRoute' => 'logout',
     'items' => [
       ['label'=>'ホーム',   'route'=>'guardian.home',              'icon'=>'house'],
-      ['label'=>'出席',     'route'=>'guardian.attendances.index','icon'=>'calendar-check'],
-      ['label'=>'成績',     'route'=>'guardian.grades.index',     'icon'=>'chart-column'],
       ['label'=>'プロフィール','route'=>'guardian.profile.show', 'icon'=>'user'],
     ],
   ])

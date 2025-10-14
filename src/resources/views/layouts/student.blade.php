@@ -18,8 +18,6 @@
     'logoutRoute' => 'logout',        // 共通POST logout
     'items' => [
       ['label'=>'ホーム',   'route'=>'student.home',              'icon'=>'house'],
-      ['label'=>'出席',     'route'=>'student.attendances.index','icon'=>'calendar-check'],
-      ['label'=>'成績',     'route'=>'student.grades.index',     'icon'=>'chart-column'],
       ['label'=>'プロフィール','route'=>'student.profile.show', 'icon'=>'user'],
     ],
   ])
