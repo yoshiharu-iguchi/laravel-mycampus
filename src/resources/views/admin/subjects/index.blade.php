@@ -81,8 +81,8 @@
             <td>{{ $subject->name_ja }}</td>
             <td>{{ $subject->credits }}</td>
             <td>{{ $subject->year }}</td>
-            <td>{{ $subject->term }}</td>
-            <td>{{ $subject->category }}</td>
+            <td>{{ $subject->term_label }}</td>
+            <td>{{ $subject->category_label }}</td>
             <td>{{ $subject->capacity }}</td>
             <td class="text-end">
               <a href="{{ route('admin.subjects.show', $subject) }}" class="btn btn-sm btn-outline-primary">詳細</a>

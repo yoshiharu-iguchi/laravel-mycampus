@@ -46,6 +46,11 @@
         <i class="bi bi-journal-text me-2"></i>科目一覧
       </a>
       <a class="list-group-item list-group-item-action"
+        href="{{ route('admin.enrollments.index') }}">
+        <i class="bi bi-card-checklist me-2"></i>履修登録一覧
+      </a>
+
+      <a class="list-group-item list-group-item-action"
          href="{{ route('admin.teachers.index') }}">
         <i class="bi bi-person-badge me-2"></i>教員一覧
       </a>

@@ -26,9 +26,8 @@
 
 @section('content')
   <div class="page-header mb-3">
-    <h1 class="h4 mb-0">@yield('page-title', '学生メニュー')</h1>
-    @hasSection('actions')
-      <div class="d-flex align-items-center gap-2">@yield('actions')</div>
+    @hasSection('page-title')
+      <h1 class="h4 mb-0">@yield('page-title')</h1>
     @endif
   </div>
 

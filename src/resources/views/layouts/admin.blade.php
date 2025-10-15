@@ -16,8 +16,9 @@
   @stack('head')
 </head>
 <body class="bg-light">
+  <x-topnav role="admin" :items="[]" skin="dark" />
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark app-navbar">
+<!-- <nav class="navbar navbar-expand-lg navbar-dark bg-dark app-navbar">
   <div class="container-fluid">
     {{-- ★ロゴ（ダッシュボードに戻る） --}}
     <a class="navbar-brand" href="{{ route('admin.dashboard') }}">MyCampus Admin</a>
@@ -79,7 +80,7 @@
       </div>
     </div>
   </div>
-</nav>
+</nav> -->
 
 <main class="container py-3">
   <div class="page-header mb-3">

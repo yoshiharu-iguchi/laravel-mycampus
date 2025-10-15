@@ -14,6 +14,8 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 // 教員の出席コントローラはクラス名が衝突しやすいので alias
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
 use App\Http\Controllers\Teacher\ProfileController as TeacherProfileController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
+use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -210,6 +212,7 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::redirect('/','dashboard');
     Route::get('dashboard', [\App\Http\Controllers\Admin\HomeController::class,'index'])->name('dashboard');
     Route::get('home', [\App\Http\Controllers\Admin\HomeController::class,'index'])->name('home');
+    Route::get('profile',[AdminProfileController::class,'show'])->name('profile.show');
 
     // Students
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)
@@ -222,10 +225,18 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::resource('subjects', \App\Http\Controllers\Admin\SubjectController::class);
 
     // Enrollments (閲覧)
-    Route::get('enrollments', [\App\Http\Controllers\Admin\EnrollmentController::class,'index'])->name('enrollments.index');
-    Route::get('enrollments/subject/{subject}', [\App\Http\Controllers\Admin\EnrollmentController::class,'bySubject'])->name('enrollments.bySubject');
-    Route::get('enrollments/student/{student}', [\App\Http\Controllers\Admin\EnrollmentController::class,'byStudent'])->name('enrollments.byStudent');
-
+    Route::controller(AdminEnrollmentController::class)
+    ->prefix('enrollments')
+    ->as('enrollments.')
+    ->group(function () {
+        Route::get('/', 'index')->name('index'); // admin.enrollments.index
+        Route::get('/subject/{subject}', 'bySubject')
+            ->whereNumber('subject')
+            ->name('bySubject');                  // admin.enrollments.bySubject
+        Route::get('/student/{student}', 'byStudent')
+            ->whereNumber('student')
+            ->name('byStudent');                  // admin.enrollments.byStudent
+    }); 
     // Student invitation
     Route::post('students/{student}/invite', [\App\Http\Controllers\Admin\StudentInviteController::class,'send'])->name('students.invite');
 

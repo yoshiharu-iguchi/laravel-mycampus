@@ -26,10 +26,12 @@ class Subject extends Model
     ];
     protected $casts = [
         'category' => Category::class,
-        'credits' => 'integer',
+        'credits' => 'float',
         'year' => 'integer',
         'capacity' => 'integer',
     ];
+
+    protected $appends = ['category_label','term_label'];
 
     public function enrollments(){
         return $this->hasMany(Enrollment::class);
@@ -54,13 +56,6 @@ class Subject extends Model
         return $this->hasMany(Attendance::class);
     }
 
-    public function getCategoryLabelAttribute(): string
-    {
-    return $this->category instanceof Category
-        ? $this->category->label()
-        :(is_string($this->category) ? $this->category :'-');
-
-    }
     public function setCategoryAttribute($value): void
 {
     if ($value instanceof Category) {
@@ -82,4 +77,49 @@ class Subject extends Model
         $this->attributes['category'] = Category::Elective->value;
     }
     }
+
+    public function getCategoryLabelAttribute(): string
+{
+    $v = $this->category;
+
+    // casts で Enum のはずだが、古いデータや途中保存をケア
+    if ($v instanceof \BackedEnum) {
+        $key = $v->value;
+    } elseif ($v instanceof \App\Enums\Category) {
+        $key = $v->value;
+    } else {
+        // 2) それ以外（古いデータやフォーム入力など）を正規化
+        $normalize = [
+            true => 'required', 1 => 'required', '1' => 'required', '必修' => 'required', 'required' => 'required',
+            false => 'elective', 0 => 'elective', '0' => 'elective', '選択' => 'elective', 'elective' => 'elective',
+        ];
+        $key = $normalize[$v] ?? (is_string($v) ? $v : '');
+    }
+
+    // 3) 日本語に確定
+    return match ($key) {
+        'required' => '必修',
+        'elective' => '選択',
+        default    => $key !== '' ? $key : '-',
+    };
+}
+
+// 学期 の日本語ラベル（英語/数値/日本語の全部受け）
+public function getTermLabelAttribute(): string
+{
+    $v = $this->term;
+    // 万一 Enum 的なオブジェクトでも拾う
+    if (is_object($v) && property_exists($v, 'value')) {
+        $v = $v->value;
+    }
+    $key = (string) $v;
+
+    $map = [
+        'spring' => '前期', '1' => '前期', '前期' => '前期',
+        'fall'   => '後期', '2' => '後期', '後期' => '後期',
+        'full'   => '通年','3' => '通年','通年' => '通年',
+    ];
+
+    return $map[$key] ?? ($key !== '' ? $key : '-');
+}
 }

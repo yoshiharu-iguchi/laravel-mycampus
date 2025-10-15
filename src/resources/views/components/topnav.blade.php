@@ -1,23 +1,25 @@
 @props([
-  // role を未指定ならログイン中ガードから自動判定
+  // 未指定ならログイン中のガードから自動判定
   'role' => null,               // 'admin' | 'teacher' | 'student' | 'guardian' | null=auto
-  'items' => [],                // 既存メニュー（空なら出さない＝プロフィール/ログアウトのみ）
+  // 追加メニュー（空なら出さない＝プロフィール/ログアウトのみ）
+  'items' => [],                // 例: [['label'=>'ダッシュボード','route'=>'admin.dashboard','icon'=>'gauge-high','active'=>'admin.dashboard']]
+  // 見た目
   'skin'  => 'light',           // 'light' | 'dark'
-  'logoutRoute' => null,        // 自動解決（role.logout → 他候補 → logout）
+  // 明示したいときだけ指定（未指定なら自動解決）
+  'logoutRoute' => null,
 ])
 
 @php
   use Illuminate\Support\Facades\Route;
 
-  // ロール自動判定（未指定時）
+  /** ロール自動判定 */
   $detectedRole = auth('admin')->check() ? 'admin'
-                 : (auth('teacher')->check() ? 'teacher'
-                 : (auth('student')->check() ? 'student'
-                 : (auth('guardian')->check() ? 'guardian' : null)));
+                : (auth('teacher')->check() ? 'teacher'
+                : (auth('student')->check() ? 'student'
+                : (auth('guardian')->check() ? 'guardian' : null)));
   $role = $role ?? $detectedRole ?? 'student';
 
-  $isDark = ($skin === 'dark');
-
+  /** 表示用ラベル */
   $roleLabelMap = [
     'student'  => '学生',
     'guardian' => '保護者',
@@ -26,26 +28,29 @@
   ];
   $roleLabel = $roleLabelMap[$role] ?? $role;
 
-  // ブランドリンク（存在する最初の候補）
-  $brandRoute = collect([$role.'.home', $role.'.dashboard', 'dashboard', $items[0]['route'] ?? null])
-                ->first(fn($r) => $r && Route::has($r)) ?? '#';
+  /** テーマ */
+  $isDark = ($skin === 'dark');
 
-  // プロフィール先を自動解決
+  /** ブランドリンク候補（存在する最初を採用） */
+  $brandRoute = collect([$role.'.home', $role.'.dashboard', 'dashboard', $items[0]['route'] ?? null])
+                  ->first(fn($r) => $r && Route::has($r)) ?? '#';
+
+  /** プロフィール先の自動解決 */
   $profileRoute = collect([$role.'.profile.show', $role.'.profile', 'profile.show', 'profile'])
                     ->first(fn($r) => $r && Route::has($r));
 
-  // ログアウト先を自動解決
-  $logoutRoute = $logoutRoute ?: ($role ? $role.'.logout' : null);
-  if (!$logoutRoute || !Route::has($logoutRoute)) {
+  /** ログアウト先の自動解決 */
+  $logoutRouteName = $logoutRoute ?: ($role ? $role.'.logout' : null);
+  if (!$logoutRouteName || !Route::has($logoutRouteName)) {
     foreach (['admin.logout','teacher.logout','student.logout','guardian.logout','logout'] as $cand) {
-      if (Route::has($cand)) { $logoutRoute = $cand; break; }
+      if (Route::has($cand)) { $logoutRouteName = $cand; break; }
     }
   }
 @endphp
 
-<nav class="navbar navbar-expand-lg {{ $isDark ? 'navbar-dark bg-dark' : 'navbar-light bg-white border-bottom' }}">
+<nav class="navbar navbar-expand-lg {{ $isDark ? 'navbar-dark bg-dark' : 'navbar-light bg-white border-bottom' }} shadow-sm mb-3">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ Route::has($brandRoute) ? route($brandRoute) : '#' }}">
+    <a class="navbar-brand fw-bold" href="{{ $brandRoute !== '#' ? route($brandRoute) : '#' }}">
       MyCampus
       <small class="ms-2 text-muted" style="font-size:.8rem;">{{ $roleLabel }}</small>
     </a>
@@ -57,7 +62,7 @@
 
     <div id="mainNav" class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto align-items-lg-center">
-        {{-- 既存メニュー（あれば出す／なければ出さない） --}}
+        {{-- 追加メニュー（任意） --}}
         @foreach($items as $it)
           @continue(!Route::has($it['route']))
           @php $isActive = request()->routeIs($it['active'] ?? $it['route']); @endphp
@@ -71,7 +76,7 @@
           </li>
         @endforeach
 
-        {{-- 仕切り（メニューがあった時だけ表示） --}}
+        {{-- 仕切り（追加メニューがあるときだけ） --}}
         @if(!empty($items))
           <li class="nav-item d-none d-lg-block"><span class="nav-link disabled">|</span></li>
         @endif
@@ -87,13 +92,13 @@
         @endif
 
         {{-- ログアウト --}}
-        @if($logoutRoute && Route::has($logoutRoute))
+        @if($logoutRouteName && Route::has($logoutRouteName))
           <li class="nav-item">
             <a class="nav-link text-danger" href="#"
                onclick="event.preventDefault();document.getElementById('logout-form').submit();">
               <i class="fa-solid fa-right-from-bracket me-1"></i> ログアウト
             </a>
-            <form id="logout-form" class="d-none" method="POST" action="{{ route($logoutRoute) }}">
+            <form id="logout-form" class="d-none" method="POST" action="{{ route($logoutRouteName) }}">
               @csrf
             </form>
           </li>

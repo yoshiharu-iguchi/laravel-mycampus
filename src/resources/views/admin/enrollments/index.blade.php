@@ -1,5 +1,4 @@
 {{-- 履修登録一覧（管理） --}}
-
 <!doctype html>
 <html lang="ja">
 <head>
@@ -124,28 +123,35 @@
         @forelse($rows as $subject)
           <tr>
             <td>{{ $subject->subject_code }}</td>
-            <td>
-              <a href="{{ route('admin.enrollments.bySubject', $subject) }}" class="link-primary text-decoration-underline">
-                {{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}
+            <td>{{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}</td>
+            <td>{{ $subject->year ?? '-'}}</td>
+            {{-- ★ 日本語ラベルで表示（モデルの accessor 利用） --}}
+            <td>{{ $subject->term_label ?? '-' }}</td>
+            <td>{{ $subject->enrollments_count }} 名</td>
+            <td class="text-end">
+              <a href="{{ route('admin.enrollments.bySubject', $subject) }}" class="btn btn-sm btn-outline-primary">
+                履修学生一覧
+              </a>
+              <a href="{{ route('admin.subjects.show', $subject) }}" class="btn btn-sm btn-outline-secondary">
+                科目詳細
               </a>
             </td>
-            <td>{{ $subject->year ?? '-'}}</td>
-            <td>{{ $subject->term ?? '-' }}</td>
-            <td>{{ $subject->enrollments_count }} 名</td>
           </tr>
         @empty
-        <tr>
-          <td colspan="5" class="text-center text-muted py-5">履修登録情報はありません。</td>
-        </tr>
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">履修登録情報はありません。</td>
+          </tr>
         @endforelse
         </tbody>
-        </table>
+      </table>
+    </div> {{-- /.table-responsive --}}
+  </div>   {{-- /.card --}}
 
   {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
-    {{ $rows->links() }}
+    {{ $rows->appends(request()->only(['subject_id','year','term','keyword']))->links() }}
   </div>
 
-</div>
+</div> {{-- /.container --}}
 </body>
 </html>

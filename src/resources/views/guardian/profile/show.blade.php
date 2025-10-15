@@ -31,8 +31,8 @@
     </div>
   </div>
 
-  <div class="mt-3">
+  <!-- <div class="mt-3">
     <a class="btn btn-secondary" href="{{ route('guardian.home') }}">保護者ホームへ戻る</a>
-  </div>
+  </div> -->
 </div>
 @endsection
