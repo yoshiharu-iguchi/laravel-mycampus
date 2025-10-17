@@ -175,6 +175,7 @@ Route::prefix('student')->as('student.')->middleware('auth:student')->group(func
     Route::get('transport-requests/create', [\App\Http\Controllers\Student\TransportRequestController::class, 'create'])->name('tr.create');
     Route::post('transport-requests/search', [\App\Http\Controllers\Student\TransportRequestController::class,'search'])->name('tr.search');
     Route::post('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class, 'store'])->name('tr.store');
+    Route::get('transport-requests/{tr}/flash',[\App\Http\Controllers\Admin\TransportRequestAdminController::class,'flash'])->name('tr.flash');
 
     // 施設一覧
     Route::get('facilities', [\App\Http\Controllers\Student\FacilityController::class,'index'])->name('facilities.index');

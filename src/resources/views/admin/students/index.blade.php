@@ -4,6 +4,14 @@
 
 @section('content')
 
+<!-- @if (session('flash_detail'))
+  @php($fd = session('flash_detail'))
+  <div class="alert alert-info">
+    <div class="fw-bold mb-1">{{ $fd['title'] }}</div>
+    <div class="small">{!! nl2br(e($fd['body'])) !!}</div>
+  </div>
+@endif -->
+
   {{-- 検索フォーム --}}
   <div class="card mb-3">
     <div class="card-body">
@@ -46,39 +54,38 @@
 
   {{-- 結果テーブル --}}
   <div class="card">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>@sortablelink('name','学生氏名')</th>
-            <th>@sortablelink('student_number','学籍番号')</th>
-            <th>メールアドレス</th>
-            <th style="width: 120px;">編集</th>
-          </tr>
-        </thead>
-        <tbody>
-        @forelse($students as $student)
-          <tr>
-            <td>{{ $student->name }}</td>
-            <td>{{ $student->student_number }}</td>
-            <td>{{ $student->email }}</td>
-            <td class="text-end">
-              <a href="{{ route('admin.students.show', $student) }}" class="btn btn-sm btn-outline-primary">
-                詳細
-              </a>
-            </td>
-          </tr>
-        @empty
-          <tr>
-            <td colspan="4" class="text-center text-muted py-5">
-              該当する学生は見つかりませんでした。
-            </td>
-          </tr>
-        @endforelse
-        </tbody>
-      </table>
-    </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>@sortablelink('student_number','学籍番号')</th>
+          <th>@sortablelink('name','学生氏名')</th>
+          <th>メールアドレス</th>
+          <th style="width: 120px;">編集</th>
+        </tr>
+      </thead>
+      <tbody>
+      @forelse($students as $student)
+        <tr>
+          <td>{{ $student->student_number }}</td>
+          <td>{{ $student->name }}</td>
+          <td>{{ $student->email }}</td>
+          <td>
+            <a href="{{ route('admin.students.edit', $student) }}"
+               class="btn btn-sm btn-outline-primary">編集</a>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="4" class="text-center text-muted py-5">
+            該当する学生は見つかりませんでした。
+          </td>
+        </tr>
+      @endforelse
+      </tbody>
+    </table>
   </div>
+</div>
 
   {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
