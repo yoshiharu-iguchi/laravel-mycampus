@@ -1,7 +1,8 @@
 {
   "require": {
     "laravel/framework": "^12",
-    "kyslik/column-sortable": "^7.0"
+    "kyslik/column-sortable": "^7.0",
+    "laravel/sanctum": "^4"
   },
   "require-dev": {
     "laravel/breeze": "*"
