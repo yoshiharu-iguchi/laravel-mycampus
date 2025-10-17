@@ -3,6 +3,7 @@
         "laravel/breeze": "*"
     },
     "require": {
-        "kyslik/column-sortable": "^7.0"
+        "kyslik/column-sortable": "^7.0",
+        "laravel/framework": "^12"
     }
 }
