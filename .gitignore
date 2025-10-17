@@ -1,2 +1,5 @@
 /src/.env
 /src/.env.*
+
+/vendor/
+/src/vendor/
