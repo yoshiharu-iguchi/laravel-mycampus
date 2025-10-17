@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\View;
 use App\Models\TransportRequest;
 use App\Enums\TransportRequestStatus;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,5 +45,8 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('pendingCount',$value);
         });
+        if (App::environment(['production'])){
+            URL::forceScheme('https');
+        }
     }
 }
