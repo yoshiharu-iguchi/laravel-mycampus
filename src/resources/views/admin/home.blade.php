@@ -4,10 +4,6 @@
 @section('title','ダッシュボード')
 
 @section('actions')
-  {{-- 右上アクション（必要なら） --}}
-  <a href="{{ route('admin.enrollments.index') }}" class="btn btn-sm btn-primary">
-    履修一覧へ
-  </a>
 @endsection
 
 @section('content')

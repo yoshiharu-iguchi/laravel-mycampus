@@ -1,18 +1,7 @@
-{{-- 履修登録一覧（管理） --}}
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>履修登録一覧（管理）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.admin')
 
-  <h1 class="h4 mb-4">履修登録一覧</h1>
-
+@section('title','Enrollments')
+@section('content')
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
@@ -125,7 +114,6 @@
             <td>{{ $subject->subject_code }}</td>
             <td>{{ $subject->name_ja ?? $subject->name_en ?? '名称未設定' }}</td>
             <td>{{ $subject->year ?? '-'}}</td>
-            {{-- ★ 日本語ラベルで表示（モデルの accessor 利用） --}}
             <td>{{ $subject->term_label ?? '-' }}</td>
             <td>{{ $subject->enrollments_count }} 名</td>
             <td class="text-end">
@@ -144,14 +132,11 @@
         @endforelse
         </tbody>
       </table>
-    </div> {{-- /.table-responsive --}}
-  </div>   {{-- /.card --}}
+    </div>
+  </div>
 
   {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
     {{ $rows->appends(request()->only(['subject_id','year','term','keyword']))->links() }}
   </div>
-
-</div> {{-- /.container --}}
-</body>
-</html>
+@endsection

@@ -30,11 +30,10 @@ class VerifyEmailController extends Controller
             return redirect()->to($redirectTo.'?verified=1');
         }
 
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
-        }
+        $request->fulfill();
 
         return redirect()->to($redirectTo.'?verified=1');
+
     }
 }
 

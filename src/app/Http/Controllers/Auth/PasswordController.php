@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+
 
 class PasswordController extends Controller
 {
@@ -16,14 +16,15 @@ class PasswordController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validateWithBag('updatePassword', [
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
+            'current_password' => ['required', 'current_password'], // ← 組み込みルールで照合
+            'password'         => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $request->user()->update([
+        $request->user()->forceFill([
             'password' => Hash::make($validated['password']),
-        ]);
+        ])->save();
 
+        // ★ from('/profile') を尊重 → /profile へ302で戻る（テストと一致）
         return back()->with('status', 'password-updated');
     }
 }

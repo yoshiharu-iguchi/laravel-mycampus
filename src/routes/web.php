@@ -16,6 +16,7 @@ use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceContro
 use App\Http\Controllers\Teacher\ProfileController as TeacherProfileController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,8 +33,14 @@ require __DIR__.'/auth.php';
 Route::get('/register', fn () => response('Student Register', 200))
     ->middleware('guest')->name('register');
 
-Route::get('/login', fn () => response('Login', 200))
-    ->middleware('guest')->name('login');
+// Route::get('/login', fn () => response('Login', 200))
+//     ->middleware('guest')->name('login');
+Route::get('/login', function () {
+    foreach (['student','teacher','admin','guardian'] as $g) {
+        if (auth($g)->check()) return redirect()->route('dashboard');
+    }
+    return view('auth.login-hub');
+})->name('login');
 
 Route::get('/forgot-password', fn () => response('Forgot Password', 200))
     ->middleware('guest')->name('password.request');
@@ -85,14 +92,9 @@ Route::post('/confirm-password', function (Request $request) {
 Route::get('/verify-email', fn () => response('Verify Email Notice', 200))
     ->middleware('auth')->name('verification.notice');
 
-Route::get('/verify-email/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
-    $user = $request->user();
-    if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
-        $user->markEmailAsVerified();
-        event(new Verified($user));
-    }
-    return redirect(RouteServiceProvider::HOME.'?verified=1');
-})->middleware(['auth','signed'])->name('verification.verify');
+Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['auth','signed','throttle:6,1'])
+    ->name('verification.verify'); 
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();

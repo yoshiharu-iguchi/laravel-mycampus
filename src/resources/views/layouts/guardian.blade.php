@@ -16,10 +16,10 @@
     'role' => 'guardian',
     'skin' => 'dark',                  // ← student と揃える
     'logoutRoute' => 'logout',
-    'items' => [
-      ['label'=>'ホーム',   'route'=>'guardian.home',              'icon'=>'house'],
-      ['label'=>'プロフィール','route'=>'guardian.profile.show', 'icon'=>'user'],
-    ],
+    //'items' => [
+    //  ['label'=>'ホーム',   'route'=>'guardian.home',              'icon'=>'house'],
+    //  ['label'=>'プロフィール','route'=>'guardian.profile.show', 'icon'=>'user'],//
+    //],
   ])
 @endsection
 

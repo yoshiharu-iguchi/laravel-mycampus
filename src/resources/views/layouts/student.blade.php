@@ -16,10 +16,10 @@
     'role' => 'student',
     'skin' => 'dark',                 // ← guardian と揃える
     'logoutRoute' => 'logout',        // 共通POST logout
-    'items' => [
-      ['label'=>'ホーム',   'route'=>'student.home',              'icon'=>'house'],
-      ['label'=>'プロフィール','route'=>'student.profile.show', 'icon'=>'user'],
-    ],
+    //'items' => [
+    //  ['label'=>'ホーム',   'route'=>'student.home',              'icon'=>'house'],
+    //  ['label'=>'プロフィール','route'=>'student.profile.show', 'icon'=>'user'],
+    //],
   ])
 @endsection
 
