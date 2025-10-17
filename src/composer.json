@@ -1,9 +1,21 @@
 {
-    "require-dev": {
-        "laravel/breeze": "*"
-    },
-    "require": {
-        "kyslik/column-sortable": "^7.0",
-        "laravel/framework": "^12"
+  "require": {
+    "laravel/framework": "^12",
+    "kyslik/column-sortable": "^7.0"
+  },
+  "require-dev": {
+    "laravel/breeze": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Database\\Factories\\": "database/factories/",
+      "Database\\Seeders\\": "database/seeders/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  }
 }
