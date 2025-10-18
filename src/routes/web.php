@@ -187,7 +187,7 @@ Route::prefix('guardian')->as('guardian.')->middleware('auth:guardian')->group(f
     Route::get('home', [\App\Http\Controllers\Guardian\HomeController::class,'index'])->name('home');
     Route::get('profile', [\App\Http\Controllers\Guardian\ProfileController::class,'show'])->name('profile.show');
     Route::get('progress', [\App\Http\Controllers\Guardian\ProgressController::class,'index'])->name('progress.index');
-    Route::get('email/verify', fn () => response('Guardian Verify Email Notice',200))->name('verification.notice');
+    // Route::get('email/verify', fn () => response('Guardian Verify Email Notice',200))->name('verification.notice');
 
     // 出席・成績（閲覧：自分の子のみ）
     Route::get('attendances', [\App\Http\Controllers\Guardian\AttendanceController::class,'index'])->name('attendances.index');
