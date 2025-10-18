@@ -12,18 +12,24 @@ class StudentController extends Controller
     // 検索ボックスに入力されたキーワードを取得する
     public function index(Request $request) {
         
-        $keyword = $request->input('keyword');
+        $keyword = trim((string) $request->input('keyword', ''));
 
-        $query = Student::query();
+    $students = Student::query()
+        ->when($keyword !== '', function ($q) use ($keyword) {
+            $q->where(function ($w) use ($keyword) {
+                $w->where('name', 'like', "%{$keyword}%")
+                  ->orWhere('email', 'like', "%{$keyword}%")
+                  ->orWhere('student_number', 'like', "%{$keyword}%");
+            });
+        })
+        ->select('id','name','email','student_number','created_at') // 必要分だけ
+        ->orderBy('id')
+        ->paginate(15)
+        ->appends(['keyword' => $keyword]); // ページング遷移で検索語を保持
 
-        if (!empty($keyword)){
-            $query->where('name','like',"{$keyword}%");
-        }
-        $students = $query->sortable()->paginate(15);
+    $total = $students->total();
 
-        $total = $students->total();
-
-        return view('admin.students.index',compact('students','keyword','total'));
+    return view('admin.students.index', compact('students','keyword','total'));
     }
 
     public function show(Student $student) {

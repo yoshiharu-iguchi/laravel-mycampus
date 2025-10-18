@@ -58,8 +58,8 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>@sortablelink('student_number','学籍番号')</th>
-          <th>@sortablelink('name','学生氏名')</th>
+          <th>学生番号</th>
+          <th>学生氏名</th>
           <th>メールアドレス</th>
           <th style="width: 120px;">編集</th>
         </tr>
