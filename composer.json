@@ -1,5 +1,0 @@
-{
-    "require": {
-        "laravel/tinker": "^2.9"
-    }
-}
