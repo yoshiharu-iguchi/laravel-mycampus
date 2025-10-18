@@ -57,7 +57,7 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
-        <tr>えぃt
+        <tr>
           <th>学生番号</th>
           <th>学生氏名</th>
           <th>メールアドレス</th>
