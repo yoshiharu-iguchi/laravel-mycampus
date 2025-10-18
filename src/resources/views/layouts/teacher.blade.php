@@ -21,11 +21,10 @@
   @include('layouts.partials.topnav', [
     'role' => 'teacher',
     'skin' => 'dark',                 // 学生・保護者と同じダークスキン
+    'brandRoute' => 'teacher.dashboard',
+    'items' => [],
+    'profileRoute' => 'teacher.profile.show',
     'logoutRoute' => 'logout',
-    'items' => [
-      ['label'=>'ホーム',   'route'=>'teacher.home',               'icon'=>'house'],
-      ['label'=>'プロフィール','route'=>'teacher.profile.show','icon'=>'id-badge'], // あれば
-    ],
   ])
 @endsection
 
