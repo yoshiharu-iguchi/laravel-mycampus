@@ -1,19 +1,11 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>履修登録一覧（学生）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.student')
+@section('page-title','履修登録一覧（学生）')
 
+@section('student-content')
   <h1 class="h4 mb-4">履修登録済み科目一覧</h1>
 
-  {{-- ▼ これを追加：学生用サブナビ --}}
-@include('partials.student_nav')
+  {{-- 学生用サブナビ --}}
+  @include('partials.student_nav')
 
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
@@ -59,10 +51,9 @@
             <td>{{ $enrollment->term ?? '—' }}</td>
             <td class="text-end">
               <form method="POST" action="{{ route('student.enrollments.destroy', $enrollment) }}">
-                @csrf
-                @method('DELETE')
+                @csrf @method('DELETE')
                 <button type="submit" class="btn btn-sm btn-outline-danger"
-                  onclick="return confirm('本当に取り消しますか？')">
+                        onclick="return confirm('本当に取り消しますか？')">
                   取消
                 </button>
               </form>
@@ -84,7 +75,4 @@
   <div class="mt-3">
     {{ $enrollments->links() }}
   </div>
-
-</div>
-</body>
-</html>
+@endsection

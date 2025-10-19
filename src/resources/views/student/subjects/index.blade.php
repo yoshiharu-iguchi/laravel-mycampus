@@ -1,17 +1,10 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>科目一覧（学生）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Bootstrap（必要ならレイアウトへ移動可） --}}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
+@extends('layouts.student')
+@section('page-title','科目一覧（学生）')
 
+@section('student-content')
   <h1 class="h4 mb-4">科目一覧</h1>
-    {{-- ▼ これを追加：学生用サブナビ --}}
+
+  {{-- 学生用サブナビ --}}
   @include('partials.student_nav')
 
   {{-- フラッシュメッセージ --}}
@@ -48,8 +41,7 @@
 
       <div class="mt-3 small text-muted">
         @if(!empty($keyword ?? request('keyword')))
-          キーワード:
-          <span class="badge text-bg-secondary">{{ $keyword ?? request('keyword') }}</span>
+          キーワード: <span class="badge text-bg-secondary">{{ $keyword ?? request('keyword') }}</span>
         @else
           キーワード未指定
         @endif
@@ -105,16 +97,16 @@
             </td>
             <td>{{ $subject->capacity ?? '—' }}</td>
             <td class="text-end">
-  @php $isEnrolled = in_array($subject->id, $enrolledIds ?? []); @endphp
+              @php $isEnrolled = in_array($subject->id, $enrolledIds ?? []); @endphp
 
-  <a href="{{ route('student.subjects.show', $subject) }}" class="btn btn-sm btn-outline-primary">詳細</a>
+              <a href="{{ route('student.subjects.show', $subject) }}" class="btn btn-sm btn-outline-primary">詳細</a>
 
-  @if($isEnrolled)
-    <span class="badge text-bg-success ms-1 align-middle">履修中</span>
-  @else
-    <span class="text-muted small ms-1 align-middle">未履修</span>
-  @endif
-</td>
+              @if($isEnrolled)
+                <span class="badge text-bg-success ms-1 align-middle">履修中</span>
+              @else
+                <span class="text-muted small ms-1 align-middle">未履修</span>
+              @endif
+            </td>
           </tr>
         @empty
           <tr>
@@ -132,7 +124,4 @@
   <div class="mt-3">
     {{ $subjects->appends(['keyword' => $keyword ?? request('keyword')])->links() }}
   </div>
-
-</div>
-</body>
-</html>
+@endsection
