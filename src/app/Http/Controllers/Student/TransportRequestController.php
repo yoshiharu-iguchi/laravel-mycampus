@@ -156,7 +156,17 @@ class TransportRequestController extends Controller
     $data['student_id']   = auth('student')->id();
     $data['seat_fee_yen'] = $data['seat_fee_yen'] ?? 0;
 
-    $tr = TransportRequest::create($data);
+    $tr = TransportRequest::where('student_id',$data['student_id'])
+        ->whereDate('travel_date',$data['travel_date'])
+        ->where('from_station_name',$data['from_station_name'])
+        ->where('to_station_name',$data['to_station_name'])
+        ->where('search_url',$data['search_url'])
+        ->where('created_at','>=',now()->subSeconds(60))
+        ->latest()
+        ->first();
+    if (!$tr) {
+        $tr = TransportRequest::create($data);
+    }
 
     // ★ 管理者通知（失敗しても画面は成功のまま）
     try {

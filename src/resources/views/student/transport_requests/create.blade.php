@@ -90,7 +90,7 @@
       <div class="card mt-4">
         <div class="card-header">② 申請フォーム</div>
         <div class="card-body">
-          <form class="row g-3" method="POST" action="{{ route('student.tr.store') }}">
+          <form id="trStoreForm" class="row g-3" method="POST" action="{{ route('student.tr.store') }}">
             @csrf
 
             {{-- 実習施設（任意） --}}
@@ -243,5 +243,12 @@
       if (sel && to && !to.value && sel.value) fillToStation(false);
     });
   })();
+    document.getElementById('trStoreForm')?.addEventListener('submit', function(){
+    const btn = this.querySelector('button[type="submit"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '送信中...';
+    }
+  });
 </script>
 @endpush
