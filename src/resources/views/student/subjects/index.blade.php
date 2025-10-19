@@ -67,10 +67,32 @@
             <td>{{ $subject->term ?? '—' }}</td>
             <td>
               @php
-                $cat = $subject->category ?? null;
-                $label = $cat==='required' ? '必修' : ($cat==='elective' ? '選択' : ($cat ?? '—'));
-              @endphp
-              {{ $label }}
+                // 1) 元の値を取り出して前後の空白を除去・小文字化（英語対策）
+                $raw = (string)($subject->category ?? '');
+                $key = strtolower(trim($raw));
+
+                // 2) 代表的な表記ゆれをぜんぶ日本語へ統一
+                    $map = [
+                            'required'   => '必修',
+                            'compulsory' => '必修',
+                            'r'          => '必修',
+                            '1'          => '必修',
+                            'elective'   => '選択',
+                            'optional'   => '選択',
+                            'e'          => '選択',
+                            '0'          => '選択',
+                            // 既に日本語で入っている場合もそのまま認識
+                            '必修'        => '必修',
+                            '選択'        => '選択',
+                            ];
+
+                      $label = $map[$key] ?? ($raw !== '' ? $raw : '—'); // 未知の値は元の文字を出す（空ならダッシュ）
+                    @endphp
+
+                    {{-- 見た目をバッジにしたい場合（任意） --}}
+                  <span class="badge {{ $label === '必修' ? 'text-bg-primary' : 'text-bg-secondary' }}">
+                  {{ $label }}
+                  </span>
             </td>
             <td>{{ $subject->capacity ?? '—' }}</td>
             <td class="text-end">

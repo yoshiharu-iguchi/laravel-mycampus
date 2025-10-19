@@ -28,7 +28,7 @@
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <div class="mb-1 text-secondary">📚 履修登録</div>
-            <div class="small text-muted">登録済みの確認・取り消し、追加登録（今後対応）</div>
+            <div class="small text-muted">登録済みの確認・取消</div>
           </div>
         </div>
       </a>
@@ -40,7 +40,7 @@
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <div class="mb-1 text-secondary">🧑‍🏫 科目一覧</div>
-            <div class="small text-muted">担当教員やシラバスの確認</div>
+            <div class="small text-muted">シラバス確認・履修登録</div>
           </div>
         </div>
       </a>
