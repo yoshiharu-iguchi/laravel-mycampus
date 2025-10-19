@@ -17,7 +17,7 @@ class TransportRequest extends Model
         'travel_date' => 'date','approved_at' => 'datetime','fare_yen' => 'integer','seat_fee_yen' => 'integer','total_yen' => 'integer','status' => TransportRequestStatus::class,];
 
     protected $attributes = [
-        'status' => TransportRequestStatus::Pending,
+        'status' => TransportRequestStatus::Pending->value,
     ];
     
     public function student()

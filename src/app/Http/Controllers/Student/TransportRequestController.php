@@ -12,7 +12,7 @@ use App\Models\Facility;
 use App\Models\TransportRequest;
 use App\Services\EkispertClient;
 use App\Notifications\TransportRequestSubmitted;
-use Symfony\Component\Mailer\Exception\TransportException;
+
 
 class TransportRequestController extends Controller
 {
@@ -121,53 +121,64 @@ class TransportRequestController extends Controller
      * 申請保存（URL必須。その他は手入力で任意）
      */
     public function store(Request $request)
-    {
-        // to_station_name は施設最寄駅で補完するため nullable に変更
-        $data = $request->validate([
-            'facility_id'        => ['nullable','exists:facilities,id'],
-            'from_station_name'  => ['required','string','max:191'],
-            'to_station_name'    => ['nullable','string','max:100'],
-            'fare_yen'           => ['nullable','integer','min:0'],
-            'travel_date'        => ['required','date'],
-            'arr_time'           => ['nullable','date_format:H:i'],
-            'seat_fee_yen'       => ['nullable','integer','min:0'],
-            'total_yen'          => ['nullable','integer','min:0'],
-            'search_url'         => ['required','url','max:2000'], 
-            'route_memo' => ['nullable','string','max:1000'],
-        ]);
+{
+    // to_station_name は施設最寄駅で補完するため nullable に変更
+    $data = $request->validate([
+        'facility_id'        => ['nullable','exists:facilities,id'],
+        'from_station_name'  => ['required','string','max:191'],
+        'to_station_name'    => ['nullable','string','max:100'],
+        'fare_yen'           => ['nullable','integer','min:0'],
+        'travel_date'        => ['required','date'],
+        'arr_time'           => ['nullable','date_format:H:i'],
+        'seat_fee_yen'       => ['nullable','integer','min:0'],
+        'total_yen'          => ['nullable','integer','min:0'],
+        'search_url'         => ['required','url','max:2000'],
+        'route_memo'         => ['nullable','string','max:1000'],
+    ]);
 
-        if (isset($data['arr_time']) && strlen($data['arr_time']) === 5) {
-            $data['arr_time'] .= ':00';
+    if (isset($data['arr_time']) && strlen($data['arr_time']) === 5) {
+        $data['arr_time'] .= ':00';
+    }
+
+    // 到着駅の補完
+    if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
+        $fac = Facility::find($data['facility_id']);
+        if ($fac && $fac->nearest_station) {
+            $data['to_station_name'] = $fac->nearest_station;
         }
+    }
+    if (empty($data['to_station_name'])) {
+        return back()
+            ->withInput($data)
+            ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
+    }
 
-        // 到着駅の補完（施設が選択されていて到着駅が空なら、施設の最寄駅を入れる）
-        if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
-            $fac = Facility::find($data['facility_id']);
-            if ($fac && $fac->nearest_station) {
-                $data['to_station_name'] = $fac->nearest_station;
-            }
+    $data['student_id']   = auth('student')->id();
+    $data['seat_fee_yen'] = $data['seat_fee_yen'] ?? 0;
+
+    $tr = TransportRequest::create($data);
+
+    // ★ 管理者通知（失敗しても画面は成功のまま）
+    try {
+        $admins = Admin::query()
+            ->whereNotNull('email')->where('email','!=','')
+            ->get();
+
+        if ($admins->isEmpty()) {
+            Notification::route('mail', 'iguchi2203@gmail.com')
+                ->notify(new TransportRequestSubmitted($tr));
+        } else {
+            Notification::send($admins, new TransportRequestSubmitted($tr));
         }
+    } catch (\Throwable $e) {
+        Log::error('notify_admins_failed', ['error' => $e->getMessage()]);
+    }
 
-        // まだ空ならエラーを返す（保存時も必須相当の運用にする）
-        if (empty($data['to_station_name'])) {
-            return back()
-                ->withInput($data)
-                ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
-        }
+    // 申請後はプレビュー情報をクリア → リダイレクト（1回だけ）
+    session()->forget(['viewer_url','viewerUrl','route_memo_default']);
 
-        $data['student_id']   = auth('student')->id();   // 学生IDを紐づけ
-        $data['seat_fee_yen'] = $data['seat_fee_yen'] ?? 0; // 未入力は0円で保存
-
-        $tr = TransportRequest::create($data);
-
-        $admins = Admin::query()->get();
-        Notification::send($admins,new TransportRequestSubmitted($tr));
-
-        // 申請後はプレビュー用のURL等をクリア(次画面を空に)
-        session()->forget(['viewer_url','viewerUrl','route_memo_default']);
-        return redirect()
-            ->route('student.tr.create')
-            ->with('status', '申請を管理者へ送信しました。');
-            // ->with('saved_url', $data['search_url']);
+    return redirect()
+        ->route('student.tr.create')
+        ->with('status', '申請を管理者へ送信しました。');
     }
 }
