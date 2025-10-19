@@ -1,25 +1,8 @@
 @extends('layouts.student')
-@section('page-title','履修登録一覧（学生）')
+@section('page-title','履修登録済み科目一覧')
 
 @section('student-content')
-  <h1 class="h4 mb-4">履修登録済み科目一覧</h1>
-
-  {{-- 学生用サブナビ --}}
-  @include('partials.student_nav')
-
-  {{-- フラッシュメッセージ --}}
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-  @if($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-      </ul>
-    </div>
-  @endif
-
-  {{-- 件数サマリー --}}
+  {{-- フラッシュとエラーはレイアウト側で表示済み --}}
   <div class="small text-muted mb-2">
     全 {{ number_format($enrollments->total()) }} 件
     @if($enrollments->count())
@@ -27,7 +10,6 @@
     @endif
   </div>
 
-  {{-- 結果テーブル --}}
   <div class="card">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
@@ -53,17 +35,13 @@
               <form method="POST" action="{{ route('student.enrollments.destroy', $enrollment) }}">
                 @csrf @method('DELETE')
                 <button type="submit" class="btn btn-sm btn-outline-danger"
-                        onclick="return confirm('本当に取り消しますか？')">
-                  取消
-                </button>
+                  onclick="return confirm('本当に取り消しますか？')">取消</button>
               </form>
             </td>
           </tr>
         @empty
           <tr>
-            <td colspan="6" class="text-center text-muted py-5">
-              現在、履修登録している科目はありません。
-            </td>
+            <td colspan="6" class="text-center text-muted py-5">現在、履修登録している科目はありません。</td>
           </tr>
         @endforelse
         </tbody>
@@ -71,7 +49,6 @@
     </div>
   </div>
 
-  {{-- ページネーション --}}
   <div class="mt-3">
     {{ $enrollments->links() }}
   </div>

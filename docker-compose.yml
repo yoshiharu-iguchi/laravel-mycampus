@@ -4,6 +4,7 @@ services:
     build: ./infra/php
     volumes:
       - ./src:/data
+    working_dir: /data
     depends_on:
       - db
       - mailhog

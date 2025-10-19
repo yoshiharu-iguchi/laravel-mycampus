@@ -1,35 +1,14 @@
 @extends('layouts.student')
-@section('page-title','科目一覧（学生）')
+@section('page-title','科目一覧')
 
 @section('student-content')
-  <h1 class="h4 mb-4">科目一覧</h1>
-
-  {{-- 学生用サブナビ --}}
-  @include('partials.student_nav')
-
-  {{-- フラッシュメッセージ --}}
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-  @if($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-      </ul>
-    </div>
-  @endif
-
-  {{-- 検索フォーム --}}
   <div class="card mb-3">
     <div class="card-body">
       <form method="GET" action="{{ url()->current() }}" class="row g-2">
         <div class="col-sm-8 col-md-6">
-          <input
-            type="text"
-            name="keyword"
+          <input type="text" name="keyword"
             value="{{ old('keyword', $keyword ?? request('keyword')) }}"
-            class="form-control"
-            placeholder="科目名で検索（例：作業療法概論）">
+            class="form-control" placeholder="科目名で検索（例：作業療法概論）">
         </div>
         <div class="col-sm-auto">
           <button type="submit" class="btn btn-primary">検索</button>
@@ -49,7 +28,6 @@
     </div>
   </div>
 
-  {{-- 件数サマリー --}}
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="small text-muted">
       全 {{ number_format($total ?? $subjects->total()) }} 件
@@ -62,13 +40,12 @@
     </div>
   </div>
 
-  {{-- 結果テーブル --}}
   <div class="card">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width: 90px;">ID</th>
+            <th style="width:90px;">ID</th>
             <th>科目コード</th>
             <th>科目名</th>
             <th>単位</th>
@@ -76,7 +53,7 @@
             <th>開講期間</th>
             <th>必修/選択</th>
             <th>定員</th>
-            <th style="width: 200px;"></th>
+            <th style="width:200px;"></th>
           </tr>
         </thead>
         <tbody>
@@ -98,9 +75,7 @@
             <td>{{ $subject->capacity ?? '—' }}</td>
             <td class="text-end">
               @php $isEnrolled = in_array($subject->id, $enrolledIds ?? []); @endphp
-
               <a href="{{ route('student.subjects.show', $subject) }}" class="btn btn-sm btn-outline-primary">詳細</a>
-
               @if($isEnrolled)
                 <span class="badge text-bg-success ms-1 align-middle">履修中</span>
               @else
@@ -110,9 +85,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="9" class="text-center text-muted py-5">
-              該当する科目は見つかりませんでした。
-            </td>
+            <td colspan="9" class="text-center text-muted py-5">該当する科目は見つかりませんでした。</td>
           </tr>
         @endforelse
         </tbody>
@@ -120,7 +93,6 @@
     </div>
   </div>
 
-  {{-- ページネーション（検索クエリを引き継ぐ） --}}
   <div class="mt-3">
     {{ $subjects->appends(['keyword' => $keyword ?? request('keyword')])->links() }}
   </div>

@@ -1,0 +1,8 @@
+services:
+  app:
+    volumes:
+      - ./src:/data         # ← コンテナ内の /data が、ホストの ./src になる
+    working_dir: /data      # ← artisan が /data/artisan にある前提で動かす
+  web:
+    volumes:
+      - ./src:/data         # ← Nginx/Apache などwebも同じコードを見る
