@@ -13,8 +13,11 @@
 @section('student-content')
   <p class="text-muted mb-2">ようこそ、{{ $student->name ?? '（学生名）' }} さん。</p>
 
-  {{-- KPI（そのまま） --}}
-  @include('partials.kpi_cards', ['kpi' => $kpi])
+  {{-- ✅ KPI：履修科目数カードを隠す（hideスイッチを渡す） --}}
+  @include('partials.kpi_cards', [
+    'kpi' => $kpi,
+    'hide' => ['subjects' => true],
+  ])
 
   {{-- ホームナビ（カードリンク） --}}
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
@@ -84,7 +87,7 @@
       </a>
     </div>
 
-    {{-- 実習施設一覧（必要なければ後で外せます） --}}
+    {{-- 実習施設一覧（必要でなければ後で外せます） --}}
     <div class="col nav-card">
       <a href="{{ route('student.facilities.index') }}" class="text-decoration-none">
         <div class="card shadow-sm h-100">
@@ -96,31 +99,10 @@
       </a>
     </div>
 
-    {{-- プロフィール --}}
-    <div class="col nav-card">
-      <a href="{{ route('student.profile.show') }}" class="text-decoration-none">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <div class="mb-1 text-secondary">👤 プロフィール</div>
-            <div class="small text-muted">登録情報の確認</div>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    {{-- 学習状況（必要に応じて） --}}
-    <div class="col nav-card">
-      <a href="{{ route('student.progress.index') }}" class="text-decoration-none">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <div class="mb-1 text-secondary">📈 学習状況</div>
-            <div class="small text-muted">出欠・成績のサマリー表示</div>
-          </div>
-        </div>
-      </a>
-    </div>
+    {{-- ❌ プロフィールカード → 削除（既にナビにあるため） --}}
+    {{-- ❌ 学習状況カード → 削除 --}}
   </div>
 
-   {{-- 科目サマリー（そのまま） --}}
-  @include('partials.subject_summary', ['title' => '科目別の出席・成績状況', 'rows' => $rows])
+  {{-- ❌ 科目サマリー（出席・成績） → 削除 --}}
+  {{-- @include('partials.subject_summary', ['title' => '科目別の出席・成績状況', 'rows' => $rows]) --}}
 @endsection

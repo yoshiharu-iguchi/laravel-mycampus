@@ -12,6 +12,9 @@
 
   <h1 class="h4 mb-4">履修登録済み科目一覧</h1>
 
+  {{-- ▼ これを追加：学生用サブナビ --}}
+@include('partials.student_nav')
+
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>

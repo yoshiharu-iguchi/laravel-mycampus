@@ -11,6 +11,8 @@
 <div class="container py-4">
 
   <h1 class="h4 mb-4">科目一覧</h1>
+    {{-- ▼ これを追加：学生用サブナビ --}}
+  @include('partials.student_nav')
 
   {{-- フラッシュメッセージ --}}
   @if(session('status'))
