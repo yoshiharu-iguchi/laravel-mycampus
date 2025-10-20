@@ -1,10 +1,10 @@
 @props([
-  'title' => '科目別の出席・成績状況',
+  'title' => '科目別の出席状況',
   'rows' => [],
-  'showLegend' => true,    // 下部の凡例ON/OFF
+  'showLegend' => true,
+  'showScore' => false,   // ← 学生画面では false にして点数列を隠す
 ])
 
-{{-- Font Awesome（未読込なら一度だけ） --}}
 @once
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 @endonce
@@ -14,7 +14,6 @@
     <span class="fw-semibold">
       <i class="fa-solid fa-table me-1"></i> {{ $title }}
     </span>
-    {{-- アクション置き場：必要なら parent から <x-slot name="actions"> を差し込めます --}}
     @isset($actions)
       <div class="ms-auto d-none d-md-block">
         {{ $actions }}
@@ -38,14 +37,13 @@
               <th class="text-end">公欠</th>
               <th class="text-end">未記録</th>
               <th class="text-end">出席率</th>
-              <th class="text-end">点数</th>
+              @if($showScore)<th class="text-end">点数</th>@endif
             </tr>
           </thead>
           <tbody>
           @foreach ($rows as $r)
             @php
               $rate = $r['attendanceRate'] ?? null;
-              // 出席率の色分け（Bootstrap 5.3 の *-subtle を使用）
               $badgeClass = is_null($rate)
                 ? 'bg-secondary-subtle text-secondary'
                 : ($rate >= 90 ? 'bg-success-subtle text-success fw-semibold'
@@ -65,7 +63,9 @@
                   {{ is_null($rate) ? '—' : number_format($rate, 1).'%' }}
                 </span>
               </td>
-              <td class="text-end">{{ is_null($r['latestScore'] ?? null) ? '—' : $r['latestScore'] }}</td>
+              @if($showScore)
+                <td class="text-end">{{ is_null($r['latestScore'] ?? null) ? '—' : $r['latestScore'] }}</td>
+              @endif
             </tr>
           @endforeach
           </tbody>
