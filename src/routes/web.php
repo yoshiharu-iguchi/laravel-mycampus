@@ -281,4 +281,7 @@ Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(func
     Route::get('profile/edit',  [TeacherProfileController::class,'edit'])->name('profile.edit');
     Route::patch('profile',     [TeacherProfileController::class,'update'])->name('profile.update');
     Route::delete('profile',    [TeacherProfileController::class,'destroy'])->name('profile.destroy');
+
+    Route::resource('facilities',\App\Http\Controllers\Teacher\FacilityController::class)
+        ->only(['index','create','store','edit','update','destroy']);
 });
