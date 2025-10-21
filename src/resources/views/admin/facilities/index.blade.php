@@ -14,7 +14,7 @@
       <table class="table table-bordered table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width:28%">名称</th>
+            <th style="width:28%">施設名称</th>
             <th>住所</th>
             <th style="width:20%">最寄駅</th>
             <th style="width:18%" class="text-end">操作</th>
