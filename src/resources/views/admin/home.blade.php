@@ -1,7 +1,7 @@
 {{-- resources/views/admin/home.blade.php --}}
 @extends('layouts.admin')
 
-@section('title','ダッシュボード')
+@section('title','Home')
 
 @section('actions')
 @endsection
@@ -17,7 +17,7 @@
         </div>
       </div>
     </div>
-    @isset($pendingCount)
+    <!-- @isset($pendingCount)
       <div class="col-md-4">
         <div class="card h-100">
           <div class="card-body">
@@ -26,7 +26,7 @@
           </div>
         </div>
       </div>
-    @endisset
+    @endisset -->
   </div>
 
   {{-- クイックリンク --}}

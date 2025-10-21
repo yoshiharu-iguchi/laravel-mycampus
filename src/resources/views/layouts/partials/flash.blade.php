@@ -1,13 +1,17 @@
 @php
-  $map = ['status'=>'success','success'=>'success','info'=>'info','warning'=>'warning','error'=>'danger','danger'=>'danger'];
+    $msgs = collect([
+        ['type' => 'success', 'text' => session('status')],
+        ['type' => 'success', 'text' => session('success')],
+        ['type' => 'info',    'text' => session('info')],
+        ['type' => 'warning', 'text' => session('warning')],
+        ['type' => 'danger',  'text' => session('error')],
+    ])->filter(fn($x) => filled($x['text']))
+      ->unique('text');
 @endphp
-@foreach($map as $key => $bs)
-  @if(session()->has($key))
-    @php($msg = session()->pull($key))
-    @if($msg)
-      <div class="alert alert-{{ $bs }} small mb-2" role="alert">
-        {{ is_array($msg) ? implode(' ', $msg) : $msg }}
-      </div>
-    @endif
-  @endif
+
+@foreach($msgs as $m)
+  <div class="alert alert-{{ $m['type'] }} alert-dismissible fade show" role="alert">
+    {{ $m['text'] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
 @endforeach
