@@ -12,9 +12,9 @@
   <h1 class="h4 mb-4">教員詳細</h1>
 
   {{-- フラッシュメッセージ --}}
-  @if(session('status'))
+  <!-- @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
+  @endif -->
 
   <div class="card">
     <div class="card-body">

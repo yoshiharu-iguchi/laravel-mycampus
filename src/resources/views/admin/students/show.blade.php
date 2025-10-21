@@ -3,12 +3,12 @@
 @section('title', '学生詳細')
 
 @section('content')
-  @if(session('status'))
+  <!-- @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
   @endif
   @if(session('error'))
     <div class="alert alert-danger">{{ session('error') }}</div>
-  @endif
+  @endif -->
 
   {{-- 学生情報カード --}}
   <div class="card">

@@ -13,9 +13,9 @@
   <h1 class="h4 mb-4">科目 新規登録</h1>
 
   {{-- フラッシュメッセージ --}}
-  @if(session('status'))
+  <!-- @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
+  @endif -->
 
   {{-- バリデーションエラー --}}
   @if ($errors->any())

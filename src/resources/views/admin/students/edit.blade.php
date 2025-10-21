@@ -27,7 +27,7 @@
         @method('PUT')
 
         <div class="col-md-6">
-          <label for="name" class="form-label">氏名 <span class="text-danger">*</span></label>
+          <label for="name" class="form-label">学生氏名 <span class="text-danger">*</span></label>
           <input id="name" name="name"
                  class="form-control @error('name') is-invalid @enderror"
                  value="{{ old('name', $student->name) }}" required>
@@ -60,7 +60,7 @@
 
         <div class="col-12 d-flex justify-content-between mt-2">
           <a href="{{ route('admin.students.show', $student) }}" class="btn btn-outline-secondary">
-            キャンセル（詳細へ戻る）
+            キャンセル
           </a>
           <button class="btn btn-primary">保存する</button>
         </div>

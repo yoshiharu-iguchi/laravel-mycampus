@@ -6,9 +6,9 @@
 
 
   {{-- フラッシュメッセージ --}}
-  @if(session('status'))
+  <!-- @if(session('status'))
     <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
+  @endif -->
 
   {{-- 検索フォーム --}}
   <div class="card mb-3">
