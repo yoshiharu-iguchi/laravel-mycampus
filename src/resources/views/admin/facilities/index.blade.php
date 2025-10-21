@@ -1,9 +1,9 @@
 @extends('layouts.admin')
-@section('title','実習施設一覧')
+@section('title','Facilities')
 
 @section('content')
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h5 mb-0">実習施設一覧</h1>
+    <!-- <h1 class="h5 mb-0">実習施設一覧</h1> -->
     <a href="{{ route('admin.facilities.create') }}" class="btn btn-primary btn-sm">新規登録</a>
   </div>
 
