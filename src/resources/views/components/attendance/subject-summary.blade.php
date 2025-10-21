@@ -49,7 +49,7 @@
       ? 'bg-secondary-subtle text-secondary'
       : ($rate >= 90 ? 'bg-success-subtle text-success fw-semibold'
          : ($rate >= 70 ? 'bg-warning-subtle text-warning fw-semibold'
-                        : 'bg-danger-subtle t{{--  --}}w-semibold'));
+                        : 'bg-danger-subtle text-danger fw-semibold'));
   @endphp
   <tr>
     <td class="text-nowrap">{{ $r['subject_code'] ?? '-' }}</td>

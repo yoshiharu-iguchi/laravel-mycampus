@@ -11,7 +11,7 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $student = auth('student')->user();
+    $student = auth('student')->user();
     abort_unless($student, 404);
     $studentId = $student->id;
 
@@ -33,13 +33,14 @@ class AttendanceController extends Controller
               ->where('attendances.student_id', $studentId);
         })
         ->leftJoin('teachers', 'teachers.id', '=', 'subjects.teacher_id')
-        ->groupBy($groupCols)
+        ->groupBy('subjects.id')
         ->orderBy('subjects.id')
         ->selectRaw('
             subjects.id AS subject_id,
             ' . ($hasSubjectCode ? 'subjects.subject_code' : 'NULL') . ' AS subject_code,
-            subjects.name_ja, subjects.name_en,
-            COALESCE(teachers.name, "") AS teacher_name,
+            MAX(subjects.name_ja) AS name_ja,
+            MAX(subjects.name_en) AS name_en,
+            MAX(teachers.name) AS teacher,
             SUM(CASE WHEN attendances.status=1 THEN 1 ELSE 0 END) AS present_cnt,
             SUM(CASE WHEN attendances.status=2 THEN 1 ELSE 0 END) AS late_cnt,
             SUM(CASE WHEN attendances.status=3 THEN 1 ELSE 0 END) AS absent_cnt,
