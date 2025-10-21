@@ -217,6 +217,8 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::get('home', [\App\Http\Controllers\Admin\HomeController::class,'index'])->name('home');
     Route::get('profile',[AdminProfileController::class,'show'])->name('profile.show');
 
+    Route::resource('facilities',\App\Http\Controllers\Admin\FacilityController::class)->except(['show']);
+
 
     // Students
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)

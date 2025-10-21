@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class FacilityController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
+
     public function index()
     {
         $facilities = Facility::orderBy('name')->paginate(20);
@@ -16,7 +21,8 @@ class FacilityController extends Controller
 
     public function create()
     {
-        return view('admin.facilities.create');
+        $facility = new Facility();
+        return view('admin.facilities.create', compact('facility'));
     }
 
     public function store(Request $request)
@@ -28,7 +34,10 @@ class FacilityController extends Controller
         ]);
 
         Facility::create($data);
-        return redirect()->route('admin.facilities.index')->with('status','施設を登録しました');
+
+        return redirect()
+            ->route('admin.facilities.index')
+            ->with('status','施設を登録しました');
     }
 
     public function edit(Facility $facility)
@@ -45,12 +54,16 @@ class FacilityController extends Controller
         ]);
 
         $facility->update($data);
-        return redirect()->route('admin.facilities.index')->with('status','施設を更新しました');
+
+        return redirect()
+            ->route('admin.facilities.index')
+            ->with('status','施設を更新しました');
     }
 
     public function destroy(Facility $facility)
     {
         $facility->delete();
+
         return back()->with('status','施設を削除しました');
     }
 }

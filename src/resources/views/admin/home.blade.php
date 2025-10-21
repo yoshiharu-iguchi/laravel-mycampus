@@ -51,6 +51,10 @@
         <i class="bi bi-person-badge me-2"></i>教員一覧
       </a>
       <a class="list-group-item list-group-item-action"
+         href="{{ route('admin.facilities.index') }}">
+        <i class="bi bi-hospital me-2"></i>実習施設一覧
+      </a>
+      <a class="list-group-item list-group-item-action"
          href="{{ route('admin.tr.index', ['status' => 'pending']) }}">
         <i class="bi bi-ticket-detailed me-2"></i>経路申請（申請中）
         @if(isset($pendingCount) && $pendingCount !== null)
