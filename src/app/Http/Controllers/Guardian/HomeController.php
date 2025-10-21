@@ -3,103 +3,71 @@
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Enrollment;
-use App\Models\Attendance;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Grade;
-use App\Models\Subject;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $guardian = auth('guardian')->user();
-        abort_unless($guardian, 403);
+        $g = auth('guardian')->user();
+        $studentId = optional($g->student)->id ?? $g->student_id;
 
-        $student = $guardian->student; // ★ guardian -> student リレーション必須
-        if (!$student) {
-            return view('guardian.home', [
-                'guardian'=>$guardian,
-                'student'=>null,
-                'rows'=>[],
-                'kpi'=>[],
-            ]);
-        }
+        // --- 出席集計（いま表示できているものと同じ） ---
+        $hasSubjectCode = Schema::hasColumn('subjects','subject_code');
+        $groupCols = ['subjects.id','subjects.name_ja','subjects.name_en'];
+        if ($hasSubjectCode) $groupCols[] = 'subjects.subject_code';
 
-        $sid = $student->id;
+        $agg = DB::table('subjects')
+            ->join('enrollments', fn($j)=>$j->on('enrollments.subject_id','=','subjects.id')->where('enrollments.student_id',$studentId))
+            ->leftJoin('attendances', fn($j)=>$j->on('attendances.subject_id','=','subjects.id')->where('attendances.student_id',$studentId))
+            ->leftJoin('teachers','teachers.id','=','subjects.teacher_id')
+            ->groupBy($groupCols)
+            ->orderBy('subjects.id')
+            ->selectRaw('
+              subjects.id AS subject_id,
+              '.($hasSubjectCode ? 'subjects.subject_code' : 'NULL').' AS subject_code,
+              subjects.name_ja, subjects.name_en,
+              SUM(attendances.status=1) AS present_cnt,
+              SUM(attendances.status=2) AS late_cnt,
+              SUM(attendances.status=3) AS absent_cnt,
+              SUM(attendances.status=4) AS excused_cnt,
+              SUM(attendances.status IN (1,2,3)) AS denom_cnt,
+              MAX(teachers.name) AS teacher
+            ')
+            ->get();
 
-        // 出欠集計（学生側と同じ指標に合わせる）
-        $attendanceBySubject = Attendance::where('student_id', $sid)
-            ->selectRaw("
-                subject_id,
-                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS absent_count,
-                SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS late_count,
-                SUM(CASE WHEN status = 5 THEN 1 ELSE 0 END) AS excused_count,
-                COUNT(*) AS total_rows
-            ")
-            ->groupBy('subject_id')
-            ->get()->keyBy('subject_id');
-
-        // 成績・平均と最新
-        $gradeAgg = Grade::where('student_id', $sid)
-            ->selectRaw('subject_id, AVG(score) AS avg_score, MAX(recorded_at) AS last_recorded_at')
-            ->groupBy('subject_id')
-            ->get()->keyBy('subject_id');
-
-        $latestBySubject = Grade::where('student_id', $sid)
-            ->orderBy('subject_id')
-            ->orderByDesc('evaluation_date')
-            ->orderByDesc('recorded_at')
-            ->orderByDesc('id')
-            ->get()
-            ->groupBy('subject_id')
-            ->map(fn($rows) => optional($rows->first())->score);
-
-        $subjectIds = $attendanceBySubject->keys()->merge($gradeAgg->keys())->unique()->values();
-        $subjects = Subject::whereIn('id', $subjectIds)->get(['id','name_ja','subject_code'])->keyBy('id');
-
-        $rows = [];
-        foreach ($subjectIds as $subId) {
-            $a = $attendanceBySubject->get($subId);
-            $g = $gradeAgg->get($subId);
-
-            $present = (int)($a->present_count ?? 0);
-            $absent  = (int)($a->absent_count  ?? 0);
-            $late    = (int)($a->late_count    ?? 0);
-            $excused = (int)($a->excused_count ?? 0);
-            $total   = (int)($a->total_rows    ?? 0);
-            $unrec   = max(0, $total - ($present + $absent + $late + $excused));
-            $rate    = $total > 0 ? round(($present / $total) * 100) : null;
-
-            $rows[] = [
-                'subject_code'   => $subjects->get($subId)->subject_code ?? '-',
-                'subject_name'   => $subjects->get($subId)->name_ja ?? '(科目名なし)',
+        $rows = $agg->map(function($r){
+            $den = (int)$r->denom_cnt;
+            $present=(int)$r->present_cnt; $late=(int)$r->late_cnt;
+            $absent=(int)$r->absent_cnt;   $excused=(int)$r->excused_cnt;
+            $rate = $den>0 ? round(100*(($present+0.5*$late)/$den),1) : null;
+            return [
+                'subject_code'   => $r->subject_code ?? '-',
+                'subject_name'   => $r->name_ja ?? $r->name_en ?? '(科目名なし)',
+                'teacher'        => $r->teacher ?? '-',
                 'present'        => $present,
                 'absent'         => $absent,
                 'late'           => $late,
                 'excused'        => $excused,
-                'unrecorded'     => $unrec,
                 'attendanceRate' => $rate,
-                'avgScore'       => isset($g) && !is_null($g->avg_score) ? round($g->avg_score, 1) : null,
-                'latestScore'    => $latestBySubject->get($subId),
             ];
-        }
+        })->values()->all();
 
-        usort($rows, fn($x,$y) => strcmp($x['subject_name'], $y['subject_name']));
+        // --- 最近の成績（直近10件）を学生ホーム同様に表示するため取得 ---
+        $grades = Grade::with([
+                'subject:id,name_ja,name_en,teacher_id',
+                'teacher:id,name',
+                'subject.teacher:id,name',
+            ])
+            ->where('student_id',$studentId)
+            ->orderByDesc('evaluation_date')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get();
 
-        $kpi = [
-            'subjects'        => count($rows),
-            'avgScoreOverall' => $this->avgIgnoringNull(array_column($rows, 'avgScore')),
-            'presentTotal'    => array_sum(array_column($rows, 'present')),
-        ];
-
-        return view('guardian.home', compact('guardian','student','rows','kpi'));
-    }
-
-    private function avgIgnoringNull(array $nums): ?float
-    {
-        $valid = array_values(array_filter($nums, fn($v) => !is_null($v)));
-        return count($valid) ? round(array_sum($valid) / count($valid), 1) : null;
+        return view('guardian.home', compact('rows','grades'));
     }
 }

@@ -18,6 +18,7 @@ use App\Models\Attendance;
 use App\Models\TransportRequest;
 use Kyslik\ColumnSortable\Sortable;
 use App\Models\Grade;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
 class Student extends Authenticatable implements MustVerifyEmail
@@ -91,6 +92,7 @@ class Student extends Authenticatable implements MustVerifyEmail
 {
     $this->notify(new \App\Notifications\StudentVerifyEmail);
 }
+
 
     
 }

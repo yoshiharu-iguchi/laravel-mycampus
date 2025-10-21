@@ -11,18 +11,17 @@ class GradeController extends Controller
     public function index(Request $request)
     {
         $guardian = auth('guardian')->user();
-        $studentId = optional($guardian->student)->id; // Guardian には student() リレーションがある前提
-        abort_unless($studentId, 403);
+abort_unless($guardian, 403);
 
-        $subjectId = $request->integer('subject_id');
+$student = $guardian->student;     // ここで紐づく学生を取得
+abort_unless($student, 404);
 
-        $grades = Grade::with(['subject:id,name_ja,name_en','teacher:id,name'])
-            ->where('student_id', $studentId)
-            ->when($subjectId,fn($q) => $q->where('subject_id',$subjectId))
-            ->orderByDesc('evaluation_date')
-            ->orderByDesc('id')
-            ->get();
+$grades = \App\Models\Grade::with(['subject:id,name_ja,name_en','teacher:id,name'])
+    ->where('student_id', $student->id)
+    ->orderByDesc('evaluation_date')
+    ->orderByDesc('id')
+    ->get();
 
-        return view('guardian.grades.index', compact('grades'));
+return view('guardian.grades.index', compact('grades','student'));
     }
 }
