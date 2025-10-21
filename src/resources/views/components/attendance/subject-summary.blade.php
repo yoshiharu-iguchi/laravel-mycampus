@@ -30,7 +30,7 @@
   <tr>
     <th>科目コード</th>
     <th>科目名</th>
-    <th>担当</th> {{-- ★ 追加 --}}
+    <th>担当教員</th> {{-- 追加 --}}
     <th class="text-end">出席</th>
     <th class="text-end">欠席</th>
     <th class="text-end">遅刻</th>
@@ -49,19 +49,16 @@
       ? 'bg-secondary-subtle text-secondary'
       : ($rate >= 90 ? 'bg-success-subtle text-success fw-semibold'
          : ($rate >= 70 ? 'bg-warning-subtle text-warning fw-semibold'
-                        : 'bg-danger-subtle text-danger fw-semibold'));
+                        : 'bg-danger-subtle t{{--  --}}w-semibold'));
   @endphp
   <tr>
     <td class="text-nowrap">{{ $r['subject_code'] ?? '-' }}</td>
     <td class="text-nowrap">{{ $r['subject_name'] ?? '(科目名なし)' }}</td>
-    <td class="text-nowrap">{{ $r['teacher'] ?? '—' }}</td> {{-- ★ 追加 --}}
+    <td class="text-nowrap">{{ $r['teacher'] ?? '-' }}</td> {{-- 追加 --}}
     <td class="text-end">{{ $r['present'] ?? 0 }}</td>
     <td class="text-end">{{ $r['absent'] ?? 0 }}</td>
     <td class="text-end">{{ $r['late'] ?? 0 }}</td>
     <td class="text-end">{{ $r['excused'] ?? 0 }}</td>
-    {{-- ★ 「未記録」は削除：この行を消す
-    <td class="text-end">{{ $r['unrecorded'] ?? 0 }}</td>
-    --}}
     <td class="text-end">
       <span class="badge {{ $badgeClass }}">
         {{ is_null($rate) ? '—' : number_format($rate, 1).'%' }}
