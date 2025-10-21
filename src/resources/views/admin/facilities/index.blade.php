@@ -2,9 +2,10 @@
 @section('title','Facilities')
 
 @section('content')
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <!-- <h1 class="h5 mb-0">実習施設一覧</h1> -->
-    <a href="{{ route('admin.facilities.create') }}" class="btn btn-primary btn-sm">新規登録</a>
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ route('admin.facilities.create') }}" class="btn btn-primary ms-auto">
+      <i class="bi bi-plus-lg me-1"></i>新規登録
+    </a>
   </div>
 
   @if($facilities->isEmpty())
