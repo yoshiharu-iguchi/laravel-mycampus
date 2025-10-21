@@ -27,51 +27,52 @@
       <div class="table-responsive">
         <table class="table table-sm table-hover table-bordered align-middle mb-0">
           <thead class="table-light">
-            <tr>
-              <th>科目コード</th>
-              <th>科目名</th>
-              <th class="text-end">出席</th>
-              <th class="text-end">欠席</th>
-              <th class="text-end">遅刻</th>
-              <th class="text-end">公欠</th>
-              <th class="text-end">出席率</th>
-              @if($showScore)
-                <th class="text-end">点数</th>
-              @endif
-            </tr>
-          </thead>
-          <tbody>
-          @foreach ($rows as $r)
-            @php
-              $rate = $r['attendanceRate'] ?? null;
-              $badgeClass = is_null($rate)
-                ? 'bg-secondary-subtle text-secondary'
-                : ($rate >= 90 ? 'bg-success-subtle text-success fw-semibold'
-                   : ($rate >= 70 ? 'bg-warning-subtle text-warning fw-semibold'
-                                  : 'bg-danger-subtle text-danger fw-semibold'));
-            @endphp
-            <tr>
-              <td class="text-nowrap">{{ $r['subject_code'] ?? '-' }}</td>
-              <td class="text-nowrap">{{ $r['subject_name'] ?? '(科目名なし)' }}</td>
-              <td class="text-nowrap">{{ $r['teacher'] ?? '-' }}</td>
-              <td class="text-end">{{ $r['present'] ?? 0 }}</td>
-              <td class="text-end">{{ $r['absent'] ?? 0 }}</td>
-              <td class="text-end">{{ $r['late'] ?? 0 }}</td>
-              <td class="text-end">{{ $r['excused'] ?? 0 }}</td>
-              <td class="text-end">{{ $r['unrecorded'] ?? 0 }}</td>
-              <td class="text-end">
-                <span class="badge {{ $badgeClass }}">
-                  {{ is_null($rate) ? '—' : number_format($rate, 1).'%' }}
-                </span>
-              </td>
-              @if($showScore)
-                <td class="text-end">
-                  {{ is_null($r['latestScore'] ?? null) ? '—' : $r['latestScore'] }}
-                </td>
-              @endif
-            </tr>
-          @endforeach
-          </tbody>
+  <tr>
+    <th>科目コード</th>
+    <th>科目名</th>
+    <th>担当</th> {{-- ★ 追加 --}}
+    <th class="text-end">出席</th>
+    <th class="text-end">欠席</th>
+    <th class="text-end">遅刻</th>
+    <th class="text-end">公欠</th>
+    <th class="text-end">出席率</th>
+    @if($showScore)
+      <th class="text-end">点数</th>
+    @endif
+  </tr>
+</thead>
+<tbody>
+@foreach ($rows as $r)
+  @php
+    $rate = $r['attendanceRate'] ?? null;
+    $badgeClass = is_null($rate)
+      ? 'bg-secondary-subtle text-secondary'
+      : ($rate >= 90 ? 'bg-success-subtle text-success fw-semibold'
+         : ($rate >= 70 ? 'bg-warning-subtle text-warning fw-semibold'
+                        : 'bg-danger-subtle text-danger fw-semibold'));
+  @endphp
+  <tr>
+    <td class="text-nowrap">{{ $r['subject_code'] ?? '-' }}</td>
+    <td class="text-nowrap">{{ $r['subject_name'] ?? '(科目名なし)' }}</td>
+    <td class="text-nowrap">{{ $r['teacher'] ?? '—' }}</td> {{-- ★ 追加 --}}
+    <td class="text-end">{{ $r['present'] ?? 0 }}</td>
+    <td class="text-end">{{ $r['absent'] ?? 0 }}</td>
+    <td class="text-end">{{ $r['late'] ?? 0 }}</td>
+    <td class="text-end">{{ $r['excused'] ?? 0 }}</td>
+    {{-- ★ 「未記録」は削除：この行を消す
+    <td class="text-end">{{ $r['unrecorded'] ?? 0 }}</td>
+    --}}
+    <td class="text-end">
+      <span class="badge {{ $badgeClass }}">
+        {{ is_null($rate) ? '—' : number_format($rate, 1).'%' }}
+      </span>
+    </td>
+    @if($showScore)
+      <td class="text-end">{{ is_null($r['latestScore'] ?? null) ? '—' : $r['latestScore'] }}</td>
+    @endif
+  </tr>
+@endforeach
+</tbody>
         </table>
       </div>
     @endif

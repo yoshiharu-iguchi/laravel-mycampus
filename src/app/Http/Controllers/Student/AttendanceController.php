@@ -41,6 +41,7 @@ class AttendanceController extends Controller
                 'subjects.id AS subject_id,' .
                 ($hasSubjectCode ? 'subjects.subject_code' : 'NULL') . ' AS subject_code,' .
                 'subjects.name_ja, subjects.name_en,' .
+                'teachers.name AS teacher_name,' .
                 'SUM(CASE WHEN attendances.status=1 THEN 1 ELSE 0 END) AS present_cnt,' .
                 'SUM(CASE WHEN attendances.status=2 THEN 1 ELSE 0 END) AS late_cnt,' .
                 'SUM(CASE WHEN attendances.status=3 THEN 1 ELSE 0 END) AS absent_cnt,' .
@@ -55,11 +56,9 @@ class AttendanceController extends Controller
             $late    = (int) $r->late_cnt;
             $absent  = (int) $r->absent_cnt;
             $excused = (int) $r->excused_cnt;
-            
 
-            $rate = $den > 0
-                ? round(100 * (($present + 0.5 * $late) / $den), 1)
-                : null;
+            $rate = $den > 0 ? round(100 * (($present + 0.5 * $late) / $den), 1) : null;
+            
 
             return [
                 'subject_code'   => $r->subject_code ?? '-',
