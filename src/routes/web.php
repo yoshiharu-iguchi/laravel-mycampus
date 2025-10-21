@@ -217,6 +217,9 @@ Route::prefix('admin')->as('admin.')->middleware('auth:admin')->group(function (
     Route::get('home', [\App\Http\Controllers\Admin\HomeController::class,'index'])->name('home');
     Route::get('profile',[AdminProfileController::class,'show'])->name('profile.show');
 
+    Route::resource('facilities',\App\Http\Controllers\Admin\FacilityController::class)
+        ->except(['show']);
+
     // Students
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)
         ->only(['index','show','edit','update','destroy']);
@@ -282,6 +285,5 @@ Route::prefix('teacher')->as('teacher.')->middleware('auth:teacher')->group(func
     Route::patch('profile',     [TeacherProfileController::class,'update'])->name('profile.update');
     Route::delete('profile',    [TeacherProfileController::class,'destroy'])->name('profile.destroy');
 
-    Route::resource('facilities',\App\Http\Controllers\Teacher\FacilityController::class)
-        ->only(['index','create','store','edit','update','destroy']);
+    
 });
