@@ -1,8 +1,15 @@
 @extends('layouts.student')
 @section('title','成績一覧 | MyCampus')
+
+@push('head')
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+@endpush
+
 @section('content')
   <div class="card mc-card"><div class="card-body">
     <h2 class="h5 mb-3">成績一覧</h2>
+
     <div class="table-responsive">
       <table class="table table-bordered table-hover align-middle">
         <thead class="table-light">
@@ -13,17 +20,17 @@
             @php
               $subjectName = $g->subject->name_ja ?? $g->subject->name_en ?? '—';
               $teacherName = $g->teacher->name ?? optional($g->subject->teacher)->name ?? '—';
-              // 「score」か「evaluation」のどちらかが入っている想定。片方なければもう片方で表示
-              $scoreOrEval = $g->score ?? $g->evaluation ?? null;
-              // 日付は evaluation_date / recorded_at / updated_at の順に使用
-              $dateRaw = $g->evaluation_date ?? $g->recorded_at ?? $g->updated_at ?? null;
-              $date = $dateRaw ? \Illuminate\Support\Carbon::parse($dateRaw)->format('Y-m-d') : '—';
+              $score      = is_numeric($g->score ?? null) ? (int)$g->score : null;
+              $evaluation = $g->evaluation ?? null;
+              $dateRaw    = $g->evaluation_date ?? $g->recorded_at ?? $g->updated_at ?? null;
             @endphp
             <tr>
-              <td>{{ $subjectName }}</td>
-              <td>{{ $teacherName }}</td>
-              <td>{{ $scoreOrEval ?? '—' }}</td>
-              <td>{{ $date }}</td>
+              <td class="text-nowrap">{{ $subjectName }}</td>
+              <td class="text-nowrap">{{ $teacherName }}</td>
+              <td class="text-center">
+                <x-grade.score-badge :score="$score" :evaluation="$evaluation" :high="80" :mid="60" />
+              </td>
+              <td class="text-nowrap">{{ optional($dateRaw)->format('Y-m-d') ?? '—' }}</td>
             </tr>
           @empty
             <tr><td colspan="4" class="text-muted">データがありません</td></tr>
@@ -31,5 +38,14 @@
         </tbody>
       </table>
     </div>
+
+    {{-- ← ここが「テーブル直下」：凡例を配置 --}}
+    <div class="small text-muted mt-2">
+      <i class="fa-solid fa-circle text-success"></i> 80〜　
+      <i class="fa-solid fa-circle text-warning"></i> 60〜79　
+      <i class="fa-solid fa-circle text-danger"></i> 0〜59　
+      <i class="fa-regular fa-circle text-secondary"></i> 未入力
+    </div>
+
   </div></div>
 @endsection
