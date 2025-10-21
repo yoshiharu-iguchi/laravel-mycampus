@@ -20,7 +20,7 @@ class AttendanceController extends Controller
         $hasSubjectCode = Schema::hasColumn('subjects', 'subject_code');
 
         // groupBy の列を配列で用意（エディタの赤線回避にも有効）
-        $groupCols = ['subjects.id', 'subjects.name_ja', 'subjects.name_en'];
+        $groupCols = ['subjects.id', 'subjects.name_ja', 'subjects.name_en','teachers.name'];
         if ($hasSubjectCode) {
             $groupCols[] = 'subjects.subject_code';
         }
@@ -34,6 +34,7 @@ class AttendanceController extends Controller
                 $j->on('attendances.subject_id', '=', 'subjects.id')
                   ->where('attendances.student_id', $studentId);
             })
+            ->leftJoin('teachers','teachers.id','=','subjects.teacher_id')
             ->groupBy($groupCols)
             ->orderBy('subjects.id')
             ->selectRaw(
@@ -44,7 +45,6 @@ class AttendanceController extends Controller
                 'SUM(CASE WHEN attendances.status=2 THEN 1 ELSE 0 END) AS late_cnt,' .
                 'SUM(CASE WHEN attendances.status=3 THEN 1 ELSE 0 END) AS absent_cnt,' .
                 'SUM(CASE WHEN attendances.status=4 THEN 1 ELSE 0 END) AS excused_cnt,' .
-                'SUM(CASE WHEN attendances.status=0 OR attendances.recorded_at IS NULL THEN 1 ELSE 0 END) AS unrecorded_cnt,' .
                 'SUM(CASE WHEN attendances.status IN (1,2,3) THEN 1 ELSE 0 END) AS denom_cnt'
             )
             ->get();
@@ -55,7 +55,7 @@ class AttendanceController extends Controller
             $late    = (int) $r->late_cnt;
             $absent  = (int) $r->absent_cnt;
             $excused = (int) $r->excused_cnt;
-            $unrec   = (int) $r->unrecorded_cnt;
+            
 
             $rate = $den > 0
                 ? round(100 * (($present + 0.5 * $late) / $den), 1)
@@ -68,7 +68,6 @@ class AttendanceController extends Controller
                 'absent'         => $absent,
                 'late'           => $late,
                 'excused'        => $excused,
-                'unrecorded'     => $unrec,
                 'attendanceRate' => $rate,
                 // 学生画面では点数列を出さない想定なのでダミー
                 'latestScore'    => null,

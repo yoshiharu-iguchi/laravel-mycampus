@@ -34,7 +34,6 @@
               <th class="text-end">欠席</th>
               <th class="text-end">遅刻</th>
               <th class="text-end">公欠</th>
-              <th class="text-end">未記録</th>
               <th class="text-end">出席率</th>
               @if($showScore)
                 <th class="text-end">点数</th>
@@ -54,6 +53,7 @@
             <tr>
               <td class="text-nowrap">{{ $r['subject_code'] ?? '-' }}</td>
               <td class="text-nowrap">{{ $r['subject_name'] ?? '(科目名なし)' }}</td>
+              <td class="text-nowrap">{{ $r['teacher'] ?? '-' }}</td>
               <td class="text-end">{{ $r['present'] ?? 0 }}</td>
               <td class="text-end">{{ $r['absent'] ?? 0 }}</td>
               <td class="text-end">{{ $r['late'] ?? 0 }}</td>
