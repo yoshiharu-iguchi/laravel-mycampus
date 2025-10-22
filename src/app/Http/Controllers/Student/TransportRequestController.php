@@ -248,22 +248,39 @@ class TransportRequestController extends Controller
      */
     private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
 {
-    // viewer_base が空でも roote を既定に
+    // viewer_base が空でも roote を既定にする（/result まで含む）
     $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
 
-    // roote の検索結果用クエリ（最小限 + 到着/出発指定）
+    // roote は hour/minute が 0埋め無しでもOK。Tinker 例に合わせて整数へ。
+    $hour   = (int)$when->format('H');
+    $minute = (int)$when->format('i');
+
+    // Tinker が返した正常URLに近い形で作る（codes は不明なら空でOK）
     $params = [
-        'dep'      => $from,
-        'arr'      => $to,
-        'yyyymmdd' => $when->format('Ymd'),
-        'hour'     => $when->format('H'),
-        'minute'   => $when->format('i'),
-        'type'     => $arrival ? 'arr' : 'dep',
-        // 必要なら以下を追加（任意）
-        // 'sort' => 'time',
-        // 'connect' => 'true',
-        // 'local' => 'true', 'express' => 'true', 'shinkansen' => 'true', ...
-        // 駅コードがあれば dep_code / arr_code / via1_code ... を付与可能
+        'dep'        => $from,
+        'dep_code'   => '',           // 駅コードがあれば入れる（無ければ空でOK）
+        'arr'        => $to,
+        'arr_code'   => '',           // 同上
+        'via1'       => '',
+        'via1_code'  => '',
+        'via2'       => '',
+        'via2_code'  => '',
+        'yyyymmdd'   => $when->format('Ymd'),
+        'hour'       => $hour,        // 例: 8
+        'minute'     => $minute,      // 例: 0
+        'type'       => $arrival ? 'arr' : 'dep', // 到着/出発指定
+        // 代表的なフラグ（Tinker が出したURLにあったもの）
+        'sort'       => 'time',
+        'connect'    => 'true',
+        'local'      => 'true',
+        'express'    => 'true',
+        'liner'      => 'true',
+        'shinkansen' => 'true',
+        'highway'    => 'true',
+        'plane'      => 'true',
+        'ship'       => 'true',
+        'sleep'      => 'false',
+        'surcharge'  => '3',          // 3: 料金考慮（Tinker 例準拠）
     ];
 
     $sep = str_contains($base, '?') ? '&' : '?';
