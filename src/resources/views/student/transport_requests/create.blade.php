@@ -4,10 +4,11 @@
 @section('student-content')
   <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
   @php
-   $vu = ($viewerUrl ?? null)
-        ?? session('viewerUrl')
-        ?? session('viewer_url')
-        ?? old('search_url')
+  // old() が空ならセッションの viewer_url を使う
+  $vu = old('search_url');
+  if (empty($vu)) {
+      $vu = session('viewer_url');
+  }
   @endphp
 
   <div class="row g-4">
@@ -146,8 +147,8 @@
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
               <input type="url" name="search_url" class="form-control"
-                    value="{{ old('search_url') !== null ? old('search_url') : $vu}}"
-                    placeholder="駅すぱあと検索結果ページのURLを貼り付け">
+              value="{{ old('search_url') !== null ? old('search_url') : $vu}}"
+              placeholder="駅すぱあと検索結果ページのURLを貼り付け">
               @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
