@@ -100,24 +100,25 @@ class TransportRequestController extends Controller
             }
 
             // 6) フォールバック（resourceUrl が空/不正のとき直組み）
-            if (empty($viewerUrl) || !filter_var($viewerUrl, FILTER_VALIDATE_URL)) {
-                $viewerUrl = $this->buildFallbackViewerUrl(
-                    $data['from_station_name'],
-                    $data['to_station_name'],
-                    $when
-                );
-                if ($viewerUrl) {
-                    Log::warning('TR search() fallback viewerUrl', ['url' => $viewerUrl]);
-                }
-            }
+            if (!is_string($viewerUrl) || $viewerUrl === '') {
+    $viewerUrl = $this->buildFallbackViewerUrl(
+        $data['from_station_name'],
+        $data['to_station_name'],
+        $when
+    );
+    if ($viewerUrl) {
+        Log::warning('TR search() fallback viewerUrl', ['url' => $viewerUrl]);
+    }
+}
 
-            // 7) それでもダメならエラー表示
-            if (empty($viewerUrl) || !filter_var($viewerUrl, FILTER_VALIDATE_URL)) {
-                return redirect()
-                    ->route('student.tr.create')
-                    ->withInput($data)
-                    ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
-            }
+// 7) 最終バリデーション（http/https で始まっていればOK）
+if (!is_string($viewerUrl) || $viewerUrl === '' || !preg_match('#^https?://#', $viewerUrl)) {
+    return redirect()
+        ->route('student.tr.create')
+        ->withInput($data)
+        ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
+}
+
 
             // 8) セッションと old() に積む → プレビュー & 下段フォームに反映
             session()->put('viewer_url', $viewerUrl);
