@@ -37,7 +37,7 @@ class TransportRequestController extends Controller
             session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
         }
 
-        // optional: ?vu=...（URL-safe Base64）で渡されたURLを復元してセッションへ
+        // optional: ?vu=...（URL-safe Base64）をセッションへ復元
         if ($request->filled('vu')) {
             $vuParam = (string)$request->query('vu');
             $b64 = strtr($vuParam, '-_', '+/');
@@ -139,7 +139,7 @@ class TransportRequestController extends Controller
                     ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
             }
 
-            // 9) ここでセッションにも保存（任意）しつつ、そのままビューを返す
+            // 9) セッション保存＋直返し
             session()->put('viewer_url', $viewerUrl);
             session()->put('route_memo_default', "{$data['from_station_name']} → {$data['to_station_name']}");
 
@@ -149,10 +149,9 @@ class TransportRequestController extends Controller
                 ->limit(10)
                 ->get();
 
-            // ★ リダイレクトせず、検索結果URLを $viewerUrl として直接ビューへ
             return view('student.transport_requests.create', [
                 'facilities' => $facilities,
-                'viewerUrl'  => $viewerUrl,
+                'viewerUrl'  => $viewerUrl, // Blade 側が最優先で拾う
                 'myRequests' => $myRequests,
             ]);
 
@@ -164,6 +163,7 @@ class TransportRequestController extends Controller
             ]);
 
             return back()
+                ->route('student.tr.create')
                 ->withInput($data)
                 ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
         }
