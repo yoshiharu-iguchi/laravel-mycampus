@@ -107,7 +107,7 @@ class TransportRequestController extends Controller
                 $when,
                 true // 到着指定
             );
-
+            Log::info('TR search() FINAL viewerUrl', ['url' => $viewerUrl]);
             // 5) トリム & ログ
             $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
             Log::info('TR search() viewerUrl (raw)', [
@@ -247,24 +247,26 @@ class TransportRequestController extends Controller
      * resourceUrl が空のときのフォールバック生成
      */
     private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
-    {
-        // viewer_base が空でも roote を既定にする
-        $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
+{
+    // viewer_base が空でも roote を既定に
+    $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
 
-    // roote のクエリ例（最小セット + 到着/出発種別）
+    // roote の検索結果用クエリ（最小限 + 到着/出発指定）
     $params = [
-        'dep'       => $from,
-        'arr'       => $to,
-        'yyyymmdd'  => $when->format('Ymd'),
-        'hour'      => $when->format('H'),
-        'minute'    => $when->format('i'),
-        'type'      => $arrival ? 'arr' : 'dep',
-        // 任意: 並び順や交通手段フィルタを付けたい場合は追加
+        'dep'      => $from,
+        'arr'      => $to,
+        'yyyymmdd' => $when->format('Ymd'),
+        'hour'     => $when->format('H'),
+        'minute'   => $when->format('i'),
+        'type'     => $arrival ? 'arr' : 'dep',
+        // 必要なら以下を追加（任意）
         // 'sort' => 'time',
-        // 'connect' => 'true', 'local' => 'true', 'express' => 'true', ...
+        // 'connect' => 'true',
+        // 'local' => 'true', 'express' => 'true', 'shinkansen' => 'true', ...
+        // 駅コードがあれば dep_code / arr_code / via1_code ... を付与可能
     ];
 
     $sep = str_contains($base, '?') ? '&' : '?';
     return $base . $sep . http_build_query($params);
-    }
+}
 }
