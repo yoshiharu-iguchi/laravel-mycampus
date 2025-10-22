@@ -3,31 +3,15 @@
 
 @section('student-content')
   <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
+
   @php
-    // 1) Controller からの $viewerUrl を最優先
-    $vu = $viewerUrl ?? null;
-
-    // 2) セッション（従来の経路）
-    if ($vu === null || $vu === '') {
-        $vu = session('viewer_url');
-    }
-
-    // 3) old()（バリデーション戻りなど）
-    if ($vu === null || $vu === '') {
-        $vu = old('search_url');
-    }
-
-    // 4) クエリ ?vu=...（URL-safe Base64）を最終手段として復元
-    if (($vu === null || $vu === '') && request()->filled('vu')) {
-        $vuParam = (string)request()->query('vu');
-        $b64 = strtr($vuParam, '-_', '+/');              // URL-safe → 標準Base64
-        $pad = (4 - (strlen($b64) % 4)) % 4;             // パディング
-        if ($pad) { $b64 .= str_repeat('=', $pad); }
-        $decoded = base64_decode($b64, false);           // strict=false
-        if (is_string($decoded) && $decoded !== '') {
-            $vu = $decoded;
-        }
-    }
+    // Controller から渡された $prefill（セッション tr_prefill）と $viewerUrl を反映
+    $prefill = $prefill ?? (session('tr_prefill') ?? []);
+    // 上部プレビュー用 URL の決定順
+    $vu = ($viewerUrl ?? null)
+          ?? session('viewer_url')
+          ?? ($prefill['search_url'] ?? null)
+          ?? old('search_url');
   @endphp
 
   <div class="row g-4">
@@ -49,7 +33,7 @@
                   <option
                     value="{{ $f->id }}"
                     data-station="{{ $f->nearest_station }}"
-                    @selected(old('facility_id') == $f->id)
+                    @selected(old('facility_id', $prefill['facility_id'] ?? '') == $f->id)
                   >
                     {{ $f->name }}（最寄駅：{{ $f->nearest_station }}）
                   </option>
@@ -62,7 +46,8 @@
             <div class="col-md-6">
               <label class="form-label small mb-1">出発駅</label>
               <input type="text" name="from_station_name" class="form-control"
-                     value="{{ old('from_station_name') }}" placeholder="例）大宮(埼玉県)">
+                     value="{{ old('from_station_name', $prefill['from_station_name'] ?? '') }}"
+                     placeholder="例）大宮(埼玉県)">
               @error('from_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
@@ -71,22 +56,25 @@
               <label class="form-label small mb-1">到着駅</label>
               <div class="input-group">
                 <input type="text" id="to_station_name" name="to_station_name" class="form-control"
-                       value="{{ old('to_station_name') }}" placeholder="例）新宿">
+                       value="{{ old('to_station_name', $prefill['to_station_name'] ?? '') }}"
+                       placeholder="例）新宿">
                 <button type="button" id="copyNearestBtn" class="btn btn-outline-secondary">最寄駅を入れる</button>
               </div>
               @error('to_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
-            {{-- 日付:default=今日 --}}
+            {{-- 日付: default=今日 --}}
             <div class="mb-3">
               <label class="form-label">日付</label>
-              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date',now()->timezone('Asia/Tokyo')->toDateString()) }}">
+              <input type="date" name="travel_date" class="form-control"
+                     value="{{ old('travel_date', $prefill['travel_date'] ?? now()->timezone('Asia/Tokyo')->toDateString()) }}">
             </div>
 
-            {{-- 到着時刻:default=08:00 --}}
+            {{-- 到着時刻: default=08:00 --}}
             <div class="mb-3">
               <label class="form-label">到着時刻</label>
-              <input type="time" name="arr_time" class="form-control" value="{{ old('arr_time','08:00') }}">
+              <input type="time" name="arr_time" class="form-control"
+                     value="{{ old('arr_time', $prefill['arr_time'] ?? '08:00') }}">
               <div class="form-text">到着時刻は8:00に設定しています。必要に応じて変更して下さい。</div>
             </div>
 
@@ -119,7 +107,10 @@
               <select name="facility_id" id="facility_id_store" class="form-select">
                 <option value="">（未選択）</option>
                 @foreach($facilities as $f)
-                  <option value="{{ $f->id }}" @selected(old('facility_id') == $f->id)>{{ $f->name }}</option>
+                  <option value="{{ $f->id }}"
+                          @selected(old('facility_id', $prefill['facility_id'] ?? '') == $f->id)>
+                    {{ $f->name }}
+                  </option>
                 @endforeach
               </select>
               @error('facility_id') <div class="text-danger small">{{ $message }}</div> @enderror
@@ -128,24 +119,28 @@
             {{-- 出発駅・到着駅 --}}
             <div class="col-md-6">
               <label class="form-label small mb-1">出発駅</label>
-              <input type="text" name="from_station_name" class="form-control" value="{{ old('from_station_name') }}">
+              <input type="text" name="from_station_name" class="form-control"
+                     value="{{ old('from_station_name', $prefill['from_station_name'] ?? '') }}">
               @error('from_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label small mb-1">到着駅</label>
-              <input type="text" name="to_station_name" class="form-control" value="{{ old('to_station_name') }}">
+              <input type="text" name="to_station_name" class="form-control"
+                     value="{{ old('to_station_name', $prefill['to_station_name'] ?? '') }}">
               @error('to_station_name') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
             {{-- 日付・運賃 --}}
             <div class="col-md-6">
               <label class="form-label small mb-1">日付</label>
-              <input type="date" name="travel_date" class="form-control" value="{{ old('travel_date') }}">
+              <input type="date" name="travel_date" class="form-control"
+                     value="{{ old('travel_date', $prefill['travel_date'] ?? '') }}">
               @error('travel_date') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label small mb-1">片道 金額（円）</label>
-              <input type="number" name="fare_yen" class="form-control" value="{{ old('fare_yen') }}" min="0" step="1" inputmode="numeric" placeholder="例）450">
+              <input type="number" name="fare_yen" class="form-control"
+                     value="{{ old('fare_yen') }}" min="0" step="1" inputmode="numeric" placeholder="例）450">
               @error('fare_yen') <div class="text-danger small">{{ $message }}</div> @enderror
               <div class="form-text">通学定期は対象外。片道の実費を整数で入力してください。</div>
             </div>
@@ -205,7 +200,7 @@
                   switch ((string)$tr->status) {
                     case 'pending':  $cls = 'text-bg-warning'; $label = '申請中'; break;
                     case 'approved': $cls = 'text-bg-success'; $label = '承認';   break;
-                    case 'rejected': $cls = 'text-bg-danger';  $cls = 'text-bg-danger'; $label = '却下';   break;
+                    case 'rejected': $cls = 'text-bg-danger';  $label = '却下';   break;
                   }
                 }
               @endphp
@@ -263,6 +258,8 @@
       if (sel && to && !to.value && sel.value) fillToStation(false);
     });
   })();
+
+  // 二重送信防止
   document.getElementById('trStoreForm')?.addEventListener('submit', function(){
     const btn = this.querySelector('button[type="submit"]');
     if (btn) {
@@ -272,4 +269,3 @@
   });
 </script>
 @endpush
-
