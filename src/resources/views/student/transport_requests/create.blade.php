@@ -148,11 +148,12 @@
 <pre class="small text-muted">
 old(search_url): {{ var_export(old('search_url'), true) }}
 session(viewer_url): {{ var_export(session('viewer_url'), true) }}
+$vu:{{ var_export($vu,true) }}
 </pre>
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
-              <input type="url" name="search_url" class="form-control"
-              value="{{ old('search_url') }}"
+              <input type="text" name="search_url" class="form-control"
+              value="{{ old('search_url',$vu) }}"
               placeholder="駅すぱあと検索結果ページのURLを貼り付け">
               @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
