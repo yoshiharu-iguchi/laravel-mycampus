@@ -144,6 +144,11 @@
             </div>
 
             {{-- 検索結果URL（必須） --}}
+            {{-- DEBUG: 後で消してOK --}}
+<pre class="small text-muted">
+old(search_url): {{ var_export(old('search_url'), true) }}
+session(viewer_url): {{ var_export(session('viewer_url'), true) }}
+</pre>
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
               <input type="url" name="search_url" class="form-control"
