@@ -205,7 +205,7 @@
                   switch ((string)$tr->status) {
                     case 'pending':  $cls = 'text-bg-warning'; $label = '申請中'; break;
                     case 'approved': $cls = 'text-bg-success'; $label = '承認';   break;
-                    case 'rejected': $cls = 'text-bg-danger';  $label = '却下';   break;
+                    case 'rejected': $cls = 'text-bg-danger';  $cls = 'text-bg-danger'; $label = '却下';   break;
                   }
                 }
               @endphp
@@ -272,3 +272,4 @@
   });
 </script>
 @endpush
+

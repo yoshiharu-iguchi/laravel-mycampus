@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Notification;
 
 class TransportRequestController extends Controller
 {
+    /**
+     * 自分の申請一覧
+     */
     public function index()
     {
         $requests = TransportRequest::where('student_id', auth('student')->id())
@@ -24,6 +27,9 @@ class TransportRequestController extends Controller
         return view('student.transport_requests.index', compact('requests'));
     }
 
+    /**
+     * 検索＋申請画面（GET）
+     */
     public function create(Request $request)
     {
         // ?clear=1 でプレビューURLをクリア
@@ -31,26 +37,32 @@ class TransportRequestController extends Controller
             session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
         }
 
-        // ▼ 追加: ?vu=...（URL-safe Base64）で URL を受け取ったら最優先で反映
+        // optional: ?vu=...（URL-safe Base64）で渡されたURLを復元してセッションへ
         if ($request->filled('vu')) {
             $vuParam = (string)$request->query('vu');
-            $b64 = strtr($vuParam, '-_', '+/');                 // URL-safe → 標準Base64
-            $pad = (4 - (strlen($b64) % 4)) % 4;                // パディング調整
+            $b64 = strtr($vuParam, '-_', '+/');
+            $pad = (4 - (strlen($b64) % 4)) % 4;
             if ($pad) $b64 .= str_repeat('=', $pad);
-            $decoded = base64_decode($b64, false);              // strict=false
+            $decoded = base64_decode($b64, false);
             if (is_string($decoded) && $decoded !== '') {
                 session()->put('viewer_url', $decoded);
             }
         }
 
         $facilities = Facility::orderBy('name')->get(['id', 'name', 'nearest_station']);
-        $viewerUrl  = session('viewer_url'); // Blade 側の $vu の元
+        $viewerUrl  = session('viewer_url'); // Blade で最優先に拾う
         $myRequests = TransportRequest::where('student_id', auth('student')->id())
-            ->latest()->limit(10)->get();
+            ->latest()
+            ->limit(10)
+            ->get();
 
         return view('student.transport_requests.create', compact('facilities', 'viewerUrl', 'myRequests'));
     }
 
+    /**
+     * 駅すぱあと検索（URL作成のみ）
+     * ここではリダイレクトせず、そのままビューを返す（＝確実に表示させる）
+     */
     public function search(Request $request, EkispertClient $ekispert)
     {
         Log::info('TR search() hit', $request->only(['from_station_name','to_station_name','travel_date','arr_time']));
@@ -64,7 +76,7 @@ class TransportRequestController extends Controller
             'arr_time'          => ['nullable', 'regex:/^\d{1,2}:\d{2}$/'], // 8:00 / 08:00
         ]);
 
-        // 2) 到着駅の補完
+        // 2) 到着駅の補完（施設の最寄駅）
         if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
             $fac = Facility::find($data['facility_id']);
             if ($fac && $fac->nearest_station) {
@@ -91,14 +103,14 @@ class TransportRequestController extends Controller
                 true // 到着指定
             );
 
-            // 4.5) トリム & ログ
+            // 5) トリム & ログ
             $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
             Log::info('TR search() viewerUrl (raw)', [
                 'len'  => strlen($viewerUrl),
                 'head' => substr($viewerUrl, 0, 100),
             ]);
 
-            // 5) 相対URLなら viewer_base で絶対化
+            // 6) 相対URLなら viewer_base で絶対化
             if ($viewerUrl !== '' && !preg_match('#^https?://#', $viewerUrl)) {
                 $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
                 if ($base !== '') {
@@ -107,7 +119,7 @@ class TransportRequestController extends Controller
                 }
             }
 
-            // 6) 空ならフォールバック直組み
+            // 7) 空ならフォールバック直組み
             if ($viewerUrl === '') {
                 $viewerUrl = $this->buildFallbackViewerUrl(
                     $data['from_station_name'],
@@ -120,25 +132,29 @@ class TransportRequestController extends Controller
                 }
             }
 
-            // 7) 最終チェック（空だけ弾く）
+            // 8) 空ならエラー
             if ($viewerUrl === '') {
-                return redirect()
-                    ->route('student.tr.create')
+                return back()
                     ->withInput($data)
                     ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
             }
 
-            // 8) URL を ?vu=... で渡す（URL-safe Base64）
-            $vuToken = rtrim(strtr(base64_encode($viewerUrl), '+/', '-_'), '=');
-
-            // 9) セッション/old にも積む（従来経路も残す）
+            // 9) ここでセッションにも保存（任意）しつつ、そのままビューを返す
             session()->put('viewer_url', $viewerUrl);
             session()->put('route_memo_default', "{$data['from_station_name']} → {$data['to_station_name']}");
 
-            return redirect()
-                ->route('student.tr.create', ['vu' => $vuToken])  // ★ ここが肝
-                ->with('viewer_url', $viewerUrl)
-                ->withInput(array_merge($data, ['search_url' => $viewerUrl]));
+            $facilities = Facility::orderBy('name')->get(['id', 'name', 'nearest_station']);
+            $myRequests = TransportRequest::where('student_id', auth('student')->id())
+                ->latest()
+                ->limit(10)
+                ->get();
+
+            // ★ リダイレクトせず、検索結果URLを $viewerUrl として直接ビューへ
+            return view('student.transport_requests.create', [
+                'facilities' => $facilities,
+                'viewerUrl'  => $viewerUrl,
+                'myRequests' => $myRequests,
+            ]);
 
         } catch (\Throwable $e) {
             Log::error('Ekispert search error', [
@@ -147,13 +163,15 @@ class TransportRequestController extends Controller
                 'to'      => $data['to_station_name'] ?? null,
             ]);
 
-            return redirect()
-                ->route('student.tr.create')
+            return back()
                 ->withInput($data)
                 ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
         }
     }
 
+    /**
+     * 申請保存
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -165,7 +183,7 @@ class TransportRequestController extends Controller
             'arr_time'           => ['nullable', 'date_format:H:i'],
             'seat_fee_yen'       => ['nullable', 'integer', 'min:0'],
             'total_yen'          => ['nullable', 'integer', 'min:0'],
-            // ブラウザの type="url" 検証回避のため string に緩和
+            // ブラウザURL検証の誤判定を避けるため string に緩和
             'search_url'         => ['required', 'string', 'max:2000'],
             'route_memo'         => ['nullable', 'string', 'max:1000'],
         ]);
@@ -213,13 +231,16 @@ class TransportRequestController extends Controller
             Log::error('notify_admins_failed', ['error' => $e->getMessage()]);
         }
 
-        session()->forget(['viewer_url', 'route_memo_default']);
+        session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
 
         return redirect()
             ->route('student.tr.create')
             ->with('status', '申請を管理者へ送信しました。');
     }
 
+    /**
+     * resourceUrl が空のときのフォールバック生成
+     */
     private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
     {
         $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
@@ -228,6 +249,7 @@ class TransportRequestController extends Controller
         $sep = str_contains($base, '?') ? '&' : '?';
 
         $candidates = [
+            // パターンA：date & time & searchType=arrive/dep
             [
                 'from'       => $from,
                 'to'         => $to,
@@ -235,6 +257,7 @@ class TransportRequestController extends Controller
                 'time'       => $when->format('Hi'),
                 'searchType' => $arrival ? 'arrive' : 'depart',
             ],
+            // パターンB：arr/dep にまとめて渡す
             $arrival
                 ? ['from' => $from, 'to' => $to, 'arr' => $when->format('YmdHi'), 'type' => 'arr']
                 : ['from' => $from, 'to' => $to, 'dep' => $when->format('YmdHi'), 'type' => 'dep'],
