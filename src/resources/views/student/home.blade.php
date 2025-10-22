@@ -1,5 +1,5 @@
 @extends('layouts.student')
-@section('page-title','学生ホーム')
+@section('page-title','Student home')
 
 @push('head')
 <style>

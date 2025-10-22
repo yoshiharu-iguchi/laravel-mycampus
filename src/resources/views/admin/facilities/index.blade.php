@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title','Facilities')
+@section('title','Facilities list')
 
 @section('content')
   <div class="d-flex align-items-center mb-3">
@@ -18,7 +18,7 @@
             <th style="width:28%">施設名称</th>
             <th>住所</th>
             <th style="width:20%">最寄駅</th>
-            <th style="width:18%" class="text-end">操作</th>
+            <th style="width:18%" class="text-end">編集</th>
           </tr>
         </thead>
         <tbody>

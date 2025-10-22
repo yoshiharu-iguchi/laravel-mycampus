@@ -55,67 +55,76 @@ class TransportRequestController extends Controller
      * 成功・失敗ともに create に戻す（通常セッション使用 → 再検索OK）
      */
     public function search(Request $request, EkispertClient $ekispert)
-    {
-        // to_station_name は施設最寄駅で補完するため nullable に変更
-        $data = $request->validate([
-            'facility_id'       => ['nullable','exists:facilities,id'],
-            'from_station_name' => ['required','string','max:191'],    // 例: 大宮(埼玉県)
-            'to_station_name'   => ['nullable','string','max:191'],    // 例: 新宿（未入力なら施設から補完）
-            'travel_date'       => ['required','date'],                 // 例: 2025-09-26
-            'arr_time'          => ['nullable','regex:/^\d{2}:\d{2}$/'],// 例: 08:00
-        ]);
+{
+    Log::info('TR search() hit', $request->only(['from_station_name','to_station_name','travel_date','arr_time']));
 
-        // 到着駅の補完（施設が選択されていて到着駅が空なら、施設の最寄駅を入れる）
-        if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
-            $fac = Facility::find($data['facility_id']);
-            if ($fac && $fac->nearest_station) {
-                $data['to_station_name'] = $fac->nearest_station;
-            }
-        }
+    // ① バリデーション（ここで $data を作る）
+    $data = $request->validate([
+        'facility_id'       => ['nullable','exists:facilities,id'],
+        'from_station_name' => ['required','string','max:191'],       // 例: 大宮(埼玉県)
+        'to_station_name'   => ['nullable','string','max:191'],       // 空なら施設の最寄駅で補完
+        'travel_date'       => ['required','date'],                   // 例: 2025-10-22
+        'arr_time'          => ['nullable','regex:/^\d{1,2}:\d{2}$/'],// 例: 8:00 / 08:00
+    ]);
 
-        // まだ空ならエラーを返す
-        if (empty($data['to_station_name'])) {
-            return back()
-                ->withInput($data)
-                ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
-        }
-        $time = $data['arr_time'] ?? '08:00';
-        if(strlen($time) === 4){$time='0'.$time;}
-        if(strlen($time)=== 5){/* OK */}
-        $when = Carbon::parse("{$data['travel_date']} {$time}",'Asia/Tokyo');
-
-        try {
-            // フリープラン：結果ページURLのみ取得
-            $viewerUrl = $ekispert->resourceUrl(
-                $data['from_station_name'],
-                $data['to_station_name'],
-                $when,true);//到着検索
-            
-
-            // 通常セッション保存 → リロードや再検索でも保持・上書き
-            session()->put('viewer_url',$viewerUrl);
-            session()->put('viewerUrl',$viewerUrl);
-
-            $flashInput = $data;
-            $flashInput['search_url'] = $viewerUrl;
-
-            return redirect()
-                ->route('student.tr.create')
-                ->with('viewer_url',$viewerUrl)
-                ->withInput($flashInput);
-
-        } catch (\Throwable $e) {
-            Log::error('Ekispert search error', [
-                'message' => $e->getMessage(),
-                'from'    => $data['from_station_name'] ?? null,
-                'to'      => $data['to_station_name'] ?? null,
-            ]);
-            return redirect()
-                ->route('student.tr.create')
-                ->withInput($data)
-                ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
+    // ② 到着駅の補完（施設が選択されていて到着駅が空なら、施設の最寄駅を入れる）
+    if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
+        $fac = Facility::find($data['facility_id']);
+        if ($fac && $fac->nearest_station) {
+            $data['to_station_name'] = $fac->nearest_station;
         }
     }
+    if (empty($data['to_station_name'])) {
+        return back()
+            ->withInput($data)
+            ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
+    }
+
+    // ③ 到着時刻のデフォルト補正（未入力→08:00、8:00→08:00）
+    $time = trim((string)($data['arr_time'] ?? ''));
+    if ($time === '') $time = '08:00';
+    if (strlen($time) === 4) $time = '0'.$time; // 8:00 → 08:00
+    $when = Carbon::parse("{$data['travel_date']} {$time}", 'Asia/Tokyo');
+
+    try {
+        // ④ 駅すぱあと ビューアURL生成
+        $viewerUrl = $ekispert->resourceUrl(
+            $data['from_station_name'],
+            $data['to_station_name'],
+            $when,
+            true // 到着検索
+        );
+        Log::info('TR search() viewerUrl', ['url' => $viewerUrl]);
+
+        // ⑤ URLが空/不正なら明示エラー（無言失敗を防ぐ）
+        if (empty($viewerUrl) || !filter_var($viewerUrl, FILTER_VALIDATE_URL)) {
+            return redirect()
+                ->route('student.tr.create')
+                ->withInput($data)
+                ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
+        }
+
+        // ⑥ プレビュー＆フォーム既定値に反映
+        session()->put('viewer_url', $viewerUrl);
+        session()->put('viewerUrl',  $viewerUrl);
+
+        return redirect()
+            ->route('student.tr.create')
+            ->with('viewer_url', $viewerUrl) // プレビュー用
+            ->withInput(array_merge($data, ['search_url' => $viewerUrl])); // 下段フォーム用
+
+    } catch (\Throwable $e) {
+        Log::error('Ekispert search error', [
+            'message' => $e->getMessage(),
+            'from'    => $data['from_station_name'] ?? null,
+            'to'      => $data['to_station_name'] ?? null,
+        ]);
+        return redirect()
+            ->route('student.tr.create')
+            ->withInput($data)
+            ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
+    }
+}
 
     /**
      * 申請保存（URL必須。その他は手入力で任意）
