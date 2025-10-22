@@ -65,6 +65,11 @@ class TransportRequestController extends Controller
      */
     public function search(Request $request, EkispertClient $ekispert)
     {
+        file_put_contents(
+    storage_path('logs/tr_debug.log'),
+    now().' HIT '.json_encode($request->only(['from_station_name','to_station_name','travel_date','arr_time']), JSON_UNESCAPED_UNICODE).PHP_EOL,
+    FILE_APPEND
+);
         Log::info('TR search() hit', $request->only(['from_station_name','to_station_name','travel_date','arr_time']));
 
         // 1) バリデーション
@@ -243,30 +248,23 @@ class TransportRequestController extends Controller
      */
     private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
     {
-        $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
-        if ($base === '') return null;
+        // viewer_base が空でも roote を既定にする
+        $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
 
-        $sep = str_contains($base, '?') ? '&' : '?';
+    // roote のクエリ例（最小セット + 到着/出発種別）
+    $params = [
+        'dep'       => $from,
+        'arr'       => $to,
+        'yyyymmdd'  => $when->format('Ymd'),
+        'hour'      => $when->format('H'),
+        'minute'    => $when->format('i'),
+        'type'      => $arrival ? 'arr' : 'dep',
+        // 任意: 並び順や交通手段フィルタを付けたい場合は追加
+        // 'sort' => 'time',
+        // 'connect' => 'true', 'local' => 'true', 'express' => 'true', ...
+    ];
 
-        $candidates = [
-            // パターンA：date & time & searchType=arrive/dep
-            [
-                'from'       => $from,
-                'to'         => $to,
-                'date'       => $when->format('Ymd'),
-                'time'       => $when->format('Hi'),
-                'searchType' => $arrival ? 'arrive' : 'depart',
-            ],
-            // パターンB：arr/dep にまとめて渡す
-            $arrival
-                ? ['from' => $from, 'to' => $to, 'arr' => $when->format('YmdHi'), 'type' => 'arr']
-                : ['from' => $from, 'to' => $to, 'dep' => $when->format('YmdHi'), 'type' => 'dep'],
-        ];
-
-        foreach ($candidates as $params) {
-            $url = $base . $sep . http_build_query($params);
-            if ($url !== '') return $url;
-        }
-        return null;
+    $sep = str_contains($base, '?') ? '&' : '?';
+    return $base . $sep . http_build_query($params);
     }
 }

@@ -33,7 +33,7 @@ return [
 
     'ekispert' => [
         'api_key' => env('EKISPERT_API_KEY',env('EKISPERT_KEY')),
-        'viewer_base' => env('EKISPERT_VIEWER_BASE',''),
+        'viewer_base' => env('EKISPERT_VIEWER_BASE','https://roote.ekispert.net/result'),
     ],
 
 ];
