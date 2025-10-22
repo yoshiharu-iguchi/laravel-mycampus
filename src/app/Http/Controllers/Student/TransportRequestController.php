@@ -37,8 +37,24 @@ class TransportRequestController extends Controller
             session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
         }
 
+        // ▼ 追加: 検索後にクエリ ?vu=...（URL-safe Base64）で渡されたURLを復元してセッションへ
+        if ($request->filled('vu')) {
+            $vuParam = (string)$request->query('vu');
+            // URL-safe → 標準Base64へ
+            $b64 = strtr($vuParam, '-_', '+/');
+            // パディング復元（4の倍数に）
+            $pad = (4 - (strlen($b64) % 4)) % 4;
+            if ($pad) $b64 .= str_repeat('=', $pad);
+
+            $decoded = base64_decode($b64, false); // strict=false
+            if (is_string($decoded) && $decoded !== '') {
+                session()->put('viewer_url', $decoded);
+            }
+        }
+        // ▲ 追加ここまで
+
         $facilities = Facility::orderBy('name')->get(['id', 'name', 'nearest_station']);
-        $viewerUrl  = session('viewer_url'); // Blade 側の $vu で拾う
+        $viewerUrl  = session('viewer_url'); // Blade 側で $vu の元として使用
         $myRequests = TransportRequest::where('student_id', auth('student')->id())
             ->latest()->limit(10)->get();
 
@@ -89,7 +105,7 @@ class TransportRequestController extends Controller
                 true // 到着指定
             );
 
-            // 4.5) 末尾改行や空白を除去
+            // 4.5) 末尾改行や空白を除去（キーや応答に混入対策）
             $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
             Log::info('TR search() viewerUrl (raw)', [
                 'len'  => strlen($viewerUrl),
@@ -126,15 +142,19 @@ class TransportRequestController extends Controller
                     ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
             }
 
-            // 8) セッションと old() に積む → プレビュー & 下段フォームに反映
+            // ▼ 追加: URL を URL-safe Base64 にしてクエリ ?vu=... で渡す（セッション拾えない環境でも確実に出す）
+            $vuToken = rtrim(strtr(base64_encode($viewerUrl), '+/', '-_'), '=');
+
+            // 8) セッションと old() に積む → プレビュー & 下段フォームに反映（従来の経路も残す）
             session()->put('viewer_url', $viewerUrl);
             session()->put('viewerUrl',  $viewerUrl);
             session()->put('route_memo_default', "{$data['from_station_name']} → {$data['to_station_name']}");
 
             return redirect()
-                ->route('student.tr.create')
+                ->route('student.tr.create', ['vu' => $vuToken]) // ★ ここがポイント
                 ->with('viewer_url', $viewerUrl)
                 ->withInput(array_merge($data, ['search_url' => $viewerUrl]));
+            // ▲ 追加ここまで
 
         } catch (\Throwable $e) {
             Log::error('Ekispert search error', [
@@ -164,7 +184,7 @@ class TransportRequestController extends Controller
             'arr_time'           => ['nullable', 'date_format:H:i'],
             'seat_fee_yen'       => ['nullable', 'integer', 'min:0'],
             'total_yen'          => ['nullable', 'integer', 'min:0'],
-            // URL ルールは FILTER_VALIDATE_URL に依存し誤検知があるため string に緩和
+            // URL検証はブラウザ依存誤検知を避けるため string に緩和
             'search_url'         => ['required', 'string', 'max:2000'],
             'route_memo'         => ['nullable', 'string', 'max:1000'],
         ]);
