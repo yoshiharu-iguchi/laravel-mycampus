@@ -4,11 +4,30 @@
 @section('student-content')
   <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
   @php
-  // old() が空ならセッションの viewer_url を使う
-  $vu = session('viewer_url');
-  if ($vu === null || $vu === '') {
-      $vu = old('search_url');
-  }
+    // 1) Controller からの $viewerUrl を最優先
+    $vu = $viewerUrl ?? null;
+
+    // 2) セッション（従来の経路）
+    if ($vu === null || $vu === '') {
+        $vu = session('viewer_url');
+    }
+
+    // 3) old()（バリデーション戻りなど）
+    if ($vu === null || $vu === '') {
+        $vu = old('search_url');
+    }
+
+    // 4) クエリ ?vu=...（URL-safe Base64）を最終手段として復元
+    if (($vu === null || $vu === '') && request()->filled('vu')) {
+        $vuParam = (string)request()->query('vu');
+        $b64 = strtr($vuParam, '-_', '+/');              // URL-safe → 標準Base64
+        $pad = (4 - (strlen($b64) % 4)) % 4;             // パディング
+        if ($pad) { $b64 .= str_repeat('=', $pad); }
+        $decoded = base64_decode($b64, false);           // strict=false
+        if (is_string($decoded) && $decoded !== '') {
+            $vu = $decoded;
+        }
+    }
   @endphp
 
   <div class="row g-4">
@@ -144,17 +163,11 @@
             </div>
 
             {{-- 検索結果URL（必須） --}}
-            {{-- DEBUG: 後で消してOK --}}
-<pre class="small text-muted">
-old(search_url): {{ var_export(old('search_url'), true) }}
-session(viewer_url): {{ var_export(session('viewer_url'), true) }}
-$vu:{{ var_export($vu,true) }}
-</pre>
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
               <input type="text" name="search_url" class="form-control"
-              value="{{ old('search_url',$vu) }}"
-              placeholder="駅すぱあと検索結果ページのURLを貼り付け">
+                     value="{{ old('search_url', $vu) }}"
+                     placeholder="駅すぱあと検索結果ページのURLを貼り付け">
               @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
@@ -250,7 +263,7 @@ $vu:{{ var_export($vu,true) }}
       if (sel && to && !to.value && sel.value) fillToStation(false);
     });
   })();
-    document.getElementById('trStoreForm')?.addEventListener('submit', function(){
+  document.getElementById('trStoreForm')?.addEventListener('submit', function(){
     const btn = this.querySelector('button[type="submit"]');
     if (btn) {
       btn.disabled = true;
