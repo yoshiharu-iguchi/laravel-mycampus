@@ -5,9 +5,9 @@
   <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
   @php
   // old() が空ならセッションの viewer_url を使う
-  $vu = old('search_url');
-  if (empty($vu)) {
-      $vu = session('viewer_url');
+  $vu = session('viewer_url');
+  if ($vu === null || $vu === '') {
+      $vu = old('search_url');
   }
   @endphp
 
@@ -147,7 +147,7 @@
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
               <input type="url" name="search_url" class="form-control"
-              value="{{ old('search_url') !== null ? old('search_url') : $vu}}"
+              value="{{ old('search_url') }}"
               placeholder="駅すぱあと検索結果ページのURLを貼り付け">
               @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
