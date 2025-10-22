@@ -246,30 +246,27 @@ class TransportRequestController extends Controller
     /**
      * resourceUrl が空のときのフォールバック生成
      */
-    private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
+   private function buildFallbackViewerUrl(
+    string $from,
+    string $to,
+    \Carbon\Carbon $when,
+    bool $arrival = true,
+    ?string $depCode = null,
+    ?string $arrCode = null
+): ?string
 {
-    // viewer_base が空でも roote を既定にする（/result まで含む）
+    // viewer_base が空でも roote を既定に（/result まで）
     $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
 
-    // roote は hour/minute が 0埋め無しでもOK。Tinker 例に合わせて整数へ。
-    $hour   = (int)$when->format('H');
-    $minute = (int)$when->format('i');
-
-    // Tinker が返した正常URLに近い形で作る（codes は不明なら空でOK）
+    // 基本パラメータ（roote の実例に合わせる）
     $params = [
-        'dep'        => $from,
-        'dep_code'   => '',           // 駅コードがあれば入れる（無ければ空でOK）
-        'arr'        => $to,
-        'arr_code'   => '',           // 同上
-        'via1'       => '',
-        'via1_code'  => '',
-        'via2'       => '',
-        'via2_code'  => '',
-        'yyyymmdd'   => $when->format('Ymd'),
-        'hour'       => $hour,        // 例: 8
-        'minute'     => $minute,      // 例: 0
-        'type'       => $arrival ? 'arr' : 'dep', // 到着/出発指定
-        // 代表的なフラグ（Tinker が出したURLにあったもの）
+        'dep'      => $from,
+        'arr'      => $to,
+        'yyyymmdd' => $when->format('Ymd'),
+        'hour'     => $when->format('H'),  // "08"
+        'minute'   => $when->format('i'),  // "00"
+        'type'     => $arrival ? 'arr' : 'dep',
+        // 代表的なオプション（必要に応じて調整）
         'sort'       => 'time',
         'connect'    => 'true',
         'local'      => 'true',
@@ -280,8 +277,12 @@ class TransportRequestController extends Controller
         'plane'      => 'true',
         'ship'       => 'true',
         'sleep'      => 'false',
-        'surcharge'  => '3',          // 3: 料金考慮（Tinker 例準拠）
+        'surcharge'  => '3',
     ];
+
+    // ★ 駅コードが取れた場合だけ付ける（空は付けない！）
+    if (!empty($depCode)) $params['dep_code'] = $depCode;
+    if (!empty($arrCode)) $params['arr_code'] = $arrCode;
 
     $sep = str_contains($base, '?') ? '&' : '?';
     return $base . $sep . http_build_query($params);
