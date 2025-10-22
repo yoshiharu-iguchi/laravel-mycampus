@@ -37,7 +37,7 @@ class TransportRequestController extends Controller
             session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
         }
 
-        // optional: ?vu=...（URL-safe Base64）をセッションへ復元
+        // optional: ?vu=...（URL-safe Base64）で渡されたURLを復元してセッションへ
         if ($request->filled('vu')) {
             $vuParam = (string)$request->query('vu');
             $b64 = strtr($vuParam, '-_', '+/');
@@ -61,15 +61,10 @@ class TransportRequestController extends Controller
 
     /**
      * 駅すぱあと検索（URL作成のみ）
-     * ここではリダイレクトせず、そのままビューを返す（＝確実に表示させる）
+     * 成功時はリダイレクトせず、そのままビューを返して確実にプレビュー表示
      */
     public function search(Request $request, EkispertClient $ekispert)
     {
-        file_put_contents(
-    storage_path('logs/tr_debug.log'),
-    now().' HIT '.json_encode($request->only(['from_station_name','to_station_name','travel_date','arr_time']), JSON_UNESCAPED_UNICODE).PHP_EOL,
-    FILE_APPEND
-);
         Log::info('TR search() hit', $request->only(['from_station_name','to_station_name','travel_date','arr_time']));
 
         // 1) バリデーション
@@ -78,7 +73,8 @@ class TransportRequestController extends Controller
             'from_station_name' => ['required', 'string', 'max:191'],
             'to_station_name'   => ['nullable', 'string', 'max:191'], // 空なら最寄駅で補完
             'travel_date'       => ['required', 'date'],
-            'arr_time'          => ['nullable', 'regex:/^\d{1,2}:\d{2}$/'], // 8:00 / 08:00
+            // 8:00 / 08:00 の両方を許容
+            'arr_time'          => ['nullable', 'regex:/^\d{1,2}:\d{2}$/'],
         ]);
 
         // 2) 到着駅の補完（施設の最寄駅）
@@ -100,51 +96,24 @@ class TransportRequestController extends Controller
         $when = Carbon::parse("{$data['travel_date']} {$time}", 'Asia/Tokyo');
 
         try {
-            // 4) Ekispert URL 生成
+            // 4) Ekispert で URL 生成（内部でAPI→駅コード→手組みの順にフォールバック）
             $viewerUrl = $ekispert->resourceUrl(
                 $data['from_station_name'],
                 $data['to_station_name'],
                 $when,
                 true // 到着指定
             );
-            Log::info('TR search() FINAL viewerUrl', ['url' => $viewerUrl]);
-            // 5) トリム & ログ
+
             $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
-            Log::info('TR search() viewerUrl (raw)', [
-                'len'  => strlen($viewerUrl),
-                'head' => substr($viewerUrl, 0, 100),
-            ]);
+            Log::info('TR search() FINAL viewerUrl', ['url' => $viewerUrl]);
 
-            // 6) 相対URLなら viewer_base で絶対化
-            if ($viewerUrl !== '' && !preg_match('#^https?://#', $viewerUrl)) {
-                $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
-                if ($base !== '') {
-                    $viewerUrl = $base . '/' . ltrim($viewerUrl, '/');
-                    Log::warning('TR search() absolutized viewerUrl', ['url' => $viewerUrl]);
-                }
-            }
-
-            // 7) 空ならフォールバック直組み
-            if ($viewerUrl === '') {
-                $viewerUrl = $this->buildFallbackViewerUrl(
-                    $data['from_station_name'],
-                    $data['to_station_name'],
-                    $when,
-                    true
-                );
-                if ($viewerUrl) {
-                    Log::warning('TR search() fallback viewerUrl', ['url' => $viewerUrl]);
-                }
-            }
-
-            // 8) 空ならエラー
             if ($viewerUrl === '') {
                 return back()
                     ->withInput($data)
                     ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
             }
 
-            // 9) セッション保存＋直返し
+            // 5) セッション保存 & 即レンダリング
             session()->put('viewer_url', $viewerUrl);
             session()->put('route_memo_default', "{$data['from_station_name']} → {$data['to_station_name']}");
 
@@ -156,7 +125,7 @@ class TransportRequestController extends Controller
 
             return view('student.transport_requests.create', [
                 'facilities' => $facilities,
-                'viewerUrl'  => $viewerUrl, // Blade 側が最優先で拾う
+                'viewerUrl'  => $viewerUrl, // Blade の $vu が最優先で拾う
                 'myRequests' => $myRequests,
             ]);
 
@@ -168,7 +137,6 @@ class TransportRequestController extends Controller
             ]);
 
             return back()
-                ->route('student.tr.create')
                 ->withInput($data)
                 ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
         }
@@ -193,10 +161,12 @@ class TransportRequestController extends Controller
             'route_memo'         => ['nullable', 'string', 'max:1000'],
         ]);
 
+        // 秒付きへ正規化
         if (!empty($data['arr_time']) && strlen($data['arr_time']) === 5) {
             $data['arr_time'] .= ':00';
         }
 
+        // 到着駅の補完（施設最寄駅）
         if (empty($data['to_station_name']) && !empty($data['facility_id'])) {
             $fac = Facility::find($data['facility_id']);
             if ($fac && $fac->nearest_station) {
@@ -211,6 +181,7 @@ class TransportRequestController extends Controller
         $data['student_id']   = auth('student')->id();
         $data['seat_fee_yen'] = $data['seat_fee_yen'] ?? 0;
 
+        // 直近重複（60秒以内）なら再作成しない
         $tr = TransportRequest::where('student_id', $data['student_id'])
             ->whereDate('travel_date', $data['travel_date'])
             ->where('from_station_name', $data['from_station_name'])
@@ -224,6 +195,7 @@ class TransportRequestController extends Controller
             $tr = TransportRequest::create($data);
         }
 
+        // 管理者通知（失敗しても画面は成功のまま）
         try {
             $admins = Admin::query()->whereNotNull('email')->where('email', '!=', '')->get();
             if ($admins->isEmpty()) {
@@ -236,55 +208,11 @@ class TransportRequestController extends Controller
             Log::error('notify_admins_failed', ['error' => $e->getMessage()]);
         }
 
+        // プレビュー系をクリア
         session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
 
         return redirect()
             ->route('student.tr.create')
             ->with('status', '申請を管理者へ送信しました。');
     }
-
-    /**
-     * resourceUrl が空のときのフォールバック生成
-     */
-   private function buildFallbackViewerUrl(
-    string $from,
-    string $to,
-    \Carbon\Carbon $when,
-    bool $arrival = true,
-    ?string $depCode = null,
-    ?string $arrCode = null
-): ?string
-{
-    // viewer_base が空でも roote を既定に（/result まで）
-    $base = rtrim((string)(config('services.ekispert.viewer_base') ?: 'https://roote.ekispert.net/result'), '/');
-
-    // 基本パラメータ（roote の実例に合わせる）
-    $params = [
-        'dep'      => $from,
-        'arr'      => $to,
-        'yyyymmdd' => $when->format('Ymd'),
-        'hour'     => $when->format('H'),  // "08"
-        'minute'   => $when->format('i'),  // "00"
-        'type'     => $arrival ? 'arr' : 'dep',
-        // 代表的なオプション（必要に応じて調整）
-        'sort'       => 'time',
-        'connect'    => 'true',
-        'local'      => 'true',
-        'express'    => 'true',
-        'liner'      => 'true',
-        'shinkansen' => 'true',
-        'highway'    => 'true',
-        'plane'      => 'true',
-        'ship'       => 'true',
-        'sleep'      => 'false',
-        'surcharge'  => '3',
-    ];
-
-    // ★ 駅コードが取れた場合だけ付ける（空は付けない！）
-    if (!empty($depCode)) $params['dep_code'] = $depCode;
-    if (!empty($arrCode)) $params['arr_code'] = $arrCode;
-
-    $sep = str_contains($base, '?') ? '&' : '?';
-    return $base . $sep . http_build_query($params);
-}
 }
