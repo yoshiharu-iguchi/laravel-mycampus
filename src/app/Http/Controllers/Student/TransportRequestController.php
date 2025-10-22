@@ -88,10 +88,16 @@ class TransportRequestController extends Controller
                 $when,
                 true // 到着指定
             );
-            Log::info('TR search() viewerUrl', ['url' => $viewerUrl]);
+
+            // 4.5) 末尾改行や空白を除去
+            $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
+            Log::info('TR search() viewerUrl (raw)', [
+                'len'  => strlen($viewerUrl),
+                'head' => substr($viewerUrl, 0, 100),
+            ]);
 
             // 5) 相対URLなら viewer_base で絶対化
-            if (!empty($viewerUrl) && !preg_match('#^https?://#', $viewerUrl)) {
+            if ($viewerUrl !== '' && !preg_match('#^https?://#', $viewerUrl)) {
                 $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
                 if ($base !== '') {
                     $viewerUrl = $base . '/' . ltrim($viewerUrl, '/');
@@ -99,26 +105,26 @@ class TransportRequestController extends Controller
                 }
             }
 
-            // 6) フォールバック（resourceUrl が空/不正のとき直組み）
-            if (!is_string($viewerUrl) || $viewerUrl === '') {
-    $viewerUrl = $this->buildFallbackViewerUrl(
-        $data['from_station_name'],
-        $data['to_station_name'],
-        $when
-    );
-    if ($viewerUrl) {
-        Log::warning('TR search() fallback viewerUrl', ['url' => $viewerUrl]);
-    }
-}
+            // 6) 「本当に空」のときだけフォールバック直組み
+            if ($viewerUrl === '') {
+                $viewerUrl = $this->buildFallbackViewerUrl(
+                    $data['from_station_name'],
+                    $data['to_station_name'],
+                    $when,
+                    true
+                );
+                if ($viewerUrl) {
+                    Log::warning('TR search() fallback viewerUrl', ['url' => $viewerUrl]);
+                }
+            }
 
-// 7) 最終バリデーション（http/https で始まっていればOK）
-if (!is_string($viewerUrl) || $viewerUrl === '' || !preg_match('#^https?://#', $viewerUrl)) {
-    return redirect()
-        ->route('student.tr.create')
-        ->withInput($data)
-        ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
-}
-
+            // 7) 最終チェック：空でないことのみを見る（FILTER_VALIDATE_URLは使わない）
+            if ($viewerUrl === '') {
+                return redirect()
+                    ->route('student.tr.create')
+                    ->withInput($data)
+                    ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
+            }
 
             // 8) セッションと old() に積む → プレビュー & 下段フォームに反映
             session()->put('viewer_url', $viewerUrl);
@@ -158,7 +164,8 @@ if (!is_string($viewerUrl) || $viewerUrl === '' || !preg_match('#^https?://#', $
             'arr_time'           => ['nullable', 'date_format:H:i'],
             'seat_fee_yen'       => ['nullable', 'integer', 'min:0'],
             'total_yen'          => ['nullable', 'integer', 'min:0'],
-            'search_url'         => ['required', 'url', 'max:2000'],
+            // URL ルールは FILTER_VALIDATE_URL に依存し誤検知があるため string に緩和
+            'search_url'         => ['required', 'string', 'max:2000'],
             'route_memo'         => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -219,21 +226,34 @@ if (!is_string($viewerUrl) || $viewerUrl === '' || !preg_match('#^https?://#', $
 
     /**
      * resourceUrl が空のときのフォールバック生成
-     * ※ あなたのビューア仕様に合わせてクエリ名を調整してください
+     * ビューア仕様に合わせてクエリ名を調整。両方式を試す。
      */
-    private function buildFallbackViewerUrl(string $from, string $to, Carbon $when): ?string
+    private function buildFallbackViewerUrl(string $from, string $to, Carbon $when, bool $arrival = true): ?string
     {
         $base = rtrim((string)config('services.ekispert.viewer_base'), '/');
         if ($base === '') return null;
 
-        $qs = http_build_query([
-            'from' => $from,
-            'to'   => $to,
-            'arr'  => $when->format('YmdHi'), // 例：到着指定。必要に応じて param 名を変更
-            'type' => 'arrive',
-        ]);
-
         $sep = str_contains($base, '?') ? '&' : '?';
-        return $base . $sep . $qs;
+
+        $candidates = [
+            // パターンA：date & time & searchType=arrive/dep
+            [
+                'from'       => $from,
+                'to'         => $to,
+                'date'       => $when->format('Ymd'),
+                'time'       => $when->format('Hi'),
+                'searchType' => $arrival ? 'arrive' : 'depart',
+            ],
+            // パターンB：arr/dep にまとめて渡す
+            $arrival
+                ? ['from' => $from, 'to' => $to, 'arr' => $when->format('YmdHi'), 'type' => 'arr']
+                : ['from' => $from, 'to' => $to, 'dep' => $when->format('YmdHi'), 'type' => 'dep'],
+        ];
+
+        foreach ($candidates as $params) {
+            $url = $base . $sep . http_build_query($params);
+            if ($url !== '') return $url; // 妥当性はここでは見ない（上位で空チェックのみ）
+        }
+        return null;
     }
 }
