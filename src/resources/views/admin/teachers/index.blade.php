@@ -5,11 +5,6 @@
 @section('content')
 
 
-  {{-- フラッシュメッセージ --}}
-  <!-- @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif -->
-
   {{-- 検索フォーム --}}
   <div class="card mb-3">
     <div class="card-body">

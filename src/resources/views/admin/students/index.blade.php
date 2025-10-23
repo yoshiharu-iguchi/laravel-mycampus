@@ -4,14 +4,6 @@
 
 @section('content')
 
-<!-- @if (session('flash_detail'))
-  @php($fd = session('flash_detail'))
-  <div class="alert alert-info">
-    <div class="fw-bold mb-1">{{ $fd['title'] }}</div>
-    <div class="small">{!! nl2br(e($fd['body'])) !!}</div>
-  </div>
-@endif -->
-
   {{-- 検索フォーム --}}
   <div class="card mb-3">
     <div class="card-body">

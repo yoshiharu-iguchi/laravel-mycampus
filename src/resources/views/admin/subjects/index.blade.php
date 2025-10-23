@@ -5,15 +5,6 @@
 @section('content')
 
 
-
-  {{-- フラッシュメッセージ --}}
-  <!-- @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
-  @if(session('error'))
-    <div class="alert alert-danger">{{ session('error') }}</div>
-  @endif -->
-
   {{-- 検索フォーム（学生一覧と同じUI） --}}
   <div class="card mb-3">
     <div class="card-body">

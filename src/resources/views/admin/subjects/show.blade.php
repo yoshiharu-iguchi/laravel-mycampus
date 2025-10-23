@@ -12,11 +12,6 @@
 
   <h1 class="h4 mb-4">科目 詳細</h1>
 
-  {{-- フラッシュメッセージ（任意） --}}
-  <!-- @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif -->
-
   <div class="card">
     <div class="card-body">
       <dl class="row mb-0">

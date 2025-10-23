@@ -46,10 +46,6 @@
     </div>
   </div>
 
-  {{-- フラッシュ/エラー --}}
-  <!-- @includeFirst(['layouts.partials.flash','partials.flash'])
-  @includeFirst(['layouts.partials.errors','partials.errors']) -->
-
   {{-- 一括更新（カード＋枠線テーブル） --}}
   <form method="POST" action="{{ route('teacher.attendances.bulkUpdate', ['subject' => $subject->id]) }}">
     @csrf

@@ -12,11 +12,6 @@
 
   <h1 class="h4 mb-4">科目 編集</h1>
 
-  {{-- フラッシュメッセージ --}}
-  <!-- @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif -->
-
   {{-- バリデーションエラー --}}
   @if ($errors->any())
     <div class="alert alert-danger">
