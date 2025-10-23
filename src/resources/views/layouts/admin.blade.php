@@ -88,8 +88,6 @@
     @yield('actions')
   </div>
 
-  @include('layouts.partials.flash')
-  @include('layouts.partials.errors')
 
   @yield('content')
 </main>

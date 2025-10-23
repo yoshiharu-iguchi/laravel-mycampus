@@ -39,9 +39,6 @@
       @endif
     </div>
 
-    {{-- フラッシュ/エラー（共通パーツを再利用） --}}
-    @includeFirst(['layouts.partials.flash','partials.flash'])
-    @includeFirst(['layouts.partials.errors','partials.errors'])
 
     {{-- 子ビュー本体 --}}
     @yield('teacher-content')

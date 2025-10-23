@@ -31,8 +31,6 @@
     @endif
   </div>
 
-  @includeFirst(['layouts.partials.flash','partials.flash'])
-  @includeFirst(['layouts.partials.errors','partials.errors'])
 
   {{-- 子ビューがここに内容を入れる --}}
   @yield('student-content')

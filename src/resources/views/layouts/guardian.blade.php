@@ -31,8 +31,5 @@
     @endif
   </div>
 
-  @includeFirst(['layouts.partials.flash','partials.flash'])
-  @includeFirst(['layouts.partials.errors','partials.errors'])
-
   @yield('guardian-content')
 @endsection
