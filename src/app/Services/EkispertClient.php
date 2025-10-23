@@ -17,6 +17,7 @@ class EkispertClient
             ?? config('services.ekispert.access_key')
             ?? env('EKISPERT_KEY')
         ));
+        Log::info('EKI key length', ['len' => strlen($key)]);
 
         if ($key === '') {
             Log::warning('EKI key missing');
