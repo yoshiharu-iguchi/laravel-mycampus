@@ -23,15 +23,12 @@
   @yield('topnav')
 
   <main class="wrap">
-    {{-- フラッシュ --}}
-    @if (session('status'))
-      <div class="alert alert-success">{{ session('status') }}</div>
-    @endif
-    @if ($errors->any())
+    @includeFirst(['layouts.partials.flash','partials.flash'])
+    <!-- @if ($errors->any())
       <div class="alert alert-danger">
         <ul class="mb-0">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
       </div>
-    @endif
+    @endif -->
 
     @yield('content')
   </main>

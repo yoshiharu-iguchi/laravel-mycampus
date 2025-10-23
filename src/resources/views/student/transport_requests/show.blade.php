@@ -11,9 +11,6 @@
 
   <h1 class="h4 mb-4">交通費申請 詳細</h1>
 
-  @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
-  @endif
 
   @php use App\Enums\TransportRequestStatus as TRS; @endphp
 

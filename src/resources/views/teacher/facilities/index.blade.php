@@ -2,8 +2,8 @@
 @section('page-title','実習施設一覧')
 
 @section('teacher-content')
-  @includeFirst(['layouts.partials.flash','partials.flash'])
-  @includeFirst(['layouts.partials.errors','partials.errors'])
+  <!-- @includeFirst(['layouts.partials.flash','partials.flash'])
+  @includeFirst(['layouts.partials.errors','partials.errors']) -->
 
   <div class="card shadow-sm mb-3">
     <div class="card-body">

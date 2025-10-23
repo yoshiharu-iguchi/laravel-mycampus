@@ -4,12 +4,12 @@
 @section('content')
 <h1 class="h5 mb-3">{{ $subject->name_ja ?? $subject->name_en ?? '科目' }}｜履修一覧</h1>
 
-@if(session('status'))
+<!-- @if(session('status'))
   <div class="alert alert-success">{{ session('status') }}</div>
-@endif
-@if($errors->any())
+@endif -->
+<!-- @if($errors->any())
   <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
-@endif
+@endif -->
 
 {{-- 絞り込みフォーム（科目は固定なので年・学期のみ） --}}
 <div class="card mb-3">
