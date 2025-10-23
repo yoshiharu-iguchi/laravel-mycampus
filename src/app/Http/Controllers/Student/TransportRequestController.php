@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Notification;
 
 class TransportRequestController extends Controller
 {
-    /**
-     * 自分の申請一覧
-     */
+    /** 自分の申請一覧 */
     public function index()
     {
         $requests = TransportRequest::where('student_id', auth('student')->id())
@@ -27,17 +25,15 @@ class TransportRequestController extends Controller
         return view('student.transport_requests.index', compact('requests'));
     }
 
-    /**
-     * 検索＋申請画面（GET）
-     */
+    /** 検索＋申請画面（GET） */
     public function create(Request $request)
     {
-        // ?clear=1 でプレビューURLとプレフィルをクリア
+        // ?clear=1 でプレビューURLをクリア
         if ($request->boolean('clear')) {
-            session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default', 'tr_prefill']);
+            session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
         }
 
-        // optional: ?vu=...（URL-safe Base64）で渡されたURLを復元してセッションへ
+        // ?vu=（URL-safe Base64）で渡されたURLがあれば復元→セッションへ
         if ($request->filled('vu')) {
             $vuParam = (string)$request->query('vu');
             $b64 = strtr($vuParam, '-_', '+/');
@@ -49,26 +45,17 @@ class TransportRequestController extends Controller
             }
         }
 
-        $facilities = Facility::orderBy('name')->get(['id', 'name', 'nearest_station']);
-        $viewerUrl  = session('viewer_url');                // プレビュー用
-        $prefill    = session('tr_prefill', []);            // 自動入力用
+        $facilities = Facility::orderBy('name')->get(['id','name','nearest_station']);
+        $viewerUrl  = session('viewer_url'); // Blade 側で最優先に拾う
         $myRequests = TransportRequest::where('student_id', auth('student')->id())
-            ->latest()
-            ->limit(10)
-            ->get();
+            ->latest()->limit(10)->get();
 
-        return view('student.transport_requests.create', compact('facilities', 'viewerUrl', 'myRequests', 'prefill'));
+        return view('student.transport_requests.create', compact('facilities','viewerUrl','myRequests'));
     }
 
-    /**
-     * 駅すぱあと検索（URL作成のみ）
-     * 成功時はリダイレクトせず、そのままビューを返して確実にプレビュー表示
-     * かつ、入力値を tr_prefill として保存し、申請フォームを自動入力
-     */
+    /** 駅すぱあと検索（URL作成のみ）→ create にリダイレクトして確実に表示 */
     public function search(Request $request, EkispertClient $ekispert)
     {
-        Log::info('TR search() hit', $request->only(['from_station_name','to_station_name','travel_date','arr_time','facility_id']));
-
         // 1) バリデーション
         $data = $request->validate([
             'facility_id'       => ['nullable', 'exists:facilities,id'],
@@ -90,14 +77,21 @@ class TransportRequestController extends Controller
                 ->withErrors(['to_station_name' => '到着駅を入力するか、実習施設を選択して最寄駅を反映してください。']);
         }
 
-        // 3) 到着時刻のデフォルト補正
+        // 3) 到着時刻の補正
         $time = trim((string)($data['arr_time'] ?? ''));
         if ($time === '') $time = '08:00';
         if (strlen($time) === 4) $time = '0'.$time; // 8:00 → 08:00
         $when = Carbon::parse("{$data['travel_date']} {$time}", 'Asia/Tokyo');
 
+        // 4) Ekispert で URL 生成（クライアント内でAPI→コード解決→手組みまでフォールバック）
         try {
-            // 4) Ekispert で URL 生成（内部でAPI→駅コード→手組みの順にフォールバック）
+            Log::info('TR search() hit', [
+                'from_station_name' => $data['from_station_name'],
+                'to_station_name'   => $data['to_station_name'],
+                'travel_date'       => $data['travel_date'],
+                'arr_time'          => $time,
+            ]);
+
             $viewerUrl = $ekispert->resourceUrl(
                 $data['from_station_name'],
                 $data['to_station_name'],
@@ -105,63 +99,38 @@ class TransportRequestController extends Controller
                 true // 到着指定
             );
             $viewerUrl = is_string($viewerUrl) ? trim($viewerUrl) : '';
-            Log::info('TR search() FINAL viewerUrl', ['url' => $viewerUrl]);
 
             if ($viewerUrl === '') {
-                return back()
+                return redirect()
+                    ->route('student.tr.create')
                     ->withInput($data)
-                    ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。API設定・駅名・日時を確認してください。']);
+                    ->withErrors(['search_url' => '駅すぱあとの検索URLを生成できませんでした。APIキー・駅名・日時をご確認ください。']);
             }
 
-            // 5) セッション保存（プレビュー & 自動入力）
+            // 5) プレビュー用セッションに保存＆次画面の old() にも流す
             session()->put('viewer_url', $viewerUrl);
             session()->put('route_memo_default', "{$data['from_station_name']} → {$data['to_station_name']}");
 
-            // 申請フォームの自動入力に使う値を保存
-            $prefill = [
-                'facility_id'       => $data['facility_id'] ?? '',
-                'from_station_name' => $data['from_station_name'],
-                'to_station_name'   => $data['to_station_name'],
-                'travel_date'       => $data['travel_date'],
-                'arr_time'          => $time,          // 08:00 形式
-                'search_url'        => $viewerUrl,
-            ];
-            session()->put('tr_prefill', $prefill);
+            // URL-safe Base64 にしてクエリ引き回し（セッションが飛んでも復元可）
+            $vu = rtrim(strtr(base64_encode($viewerUrl), '+/', '-_'), '=');
 
-            // 同一レスポンスで old() を効かせるために flash
-            $request->merge($prefill);
-            $request->flash();
-
-            // 6) 即レンダリング（リダイレクトしない）
-            $facilities = Facility::orderBy('name')->get(['id', 'name', 'nearest_station']);
-            $myRequests = TransportRequest::where('student_id', auth('student')->id())
-                ->latest()
-                ->limit(10)
-                ->get();
-
-            return view('student.transport_requests.create', [
-                'facilities' => $facilities,
-                'viewerUrl'  => $viewerUrl,  // 上部プレビュー
-                'myRequests' => $myRequests,
-                'prefill'    => $prefill,    // 下部申請フォームの既定値
-            ]);
+            return redirect()
+                ->route('student.tr.create', ['vu' => $vu])
+                ->withInput(array_merge($data, ['search_url' => $viewerUrl]));
 
         } catch (\Throwable $e) {
             Log::error('Ekispert search error', [
                 'message' => $e->getMessage(),
-                'from'    => $data['from_station_name'] ?? null,
-                'to'      => $data['to_station_name'] ?? null,
             ]);
 
-            return back()
+            return redirect()
+                ->route('student.tr.create')
                 ->withInput($data)
                 ->withErrors(['search' => '駅すぱあと検索に失敗しました。もう一度お試しください。']);
         }
     }
 
-    /**
-     * 申請保存
-     */
+    /** 申請保存 */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -173,12 +142,11 @@ class TransportRequestController extends Controller
             'arr_time'           => ['nullable', 'date_format:H:i'],
             'seat_fee_yen'       => ['nullable', 'integer', 'min:0'],
             'total_yen'          => ['nullable', 'integer', 'min:0'],
-            // ブラウザURL検証の誤判定を避けるため string に緩和
+            // ブラウザの URL 厳格判定で弾かれないよう string に緩和
             'search_url'         => ['required', 'string', 'max:2000'],
             'route_memo'         => ['nullable', 'string', 'max:1000'],
         ]);
 
-        // 秒付きへ正規化
         if (!empty($data['arr_time']) && strlen($data['arr_time']) === 5) {
             $data['arr_time'] .= ':00';
         }
@@ -225,9 +193,8 @@ class TransportRequestController extends Controller
             Log::error('notify_admins_failed', ['error' => $e->getMessage()]);
         }
 
-        // プレビュー系はクリア。prefill は残しておく（次回申請を楽にしたいなら）
-        session()->forget(['viewer_url', 'viewerUrl', 'route_memo_default']);
-        // session()->forget('tr_prefill'); // 提出後も空にしたければこの行を有効化
+        // プレビュー系をクリア
+        session()->forget(['viewer_url','viewerUrl','route_memo_default']);
 
         return redirect()
             ->route('student.tr.create')

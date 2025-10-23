@@ -1,99 +1,89 @@
 <?php
-
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;   // ★ 追加
 
 class EkispertClient
 {
     private string $base = 'https://api.ekispert.jp/v1/json';
 
-    /**
-     * まず API の ResourceURI を取得。ダメなら駅コードで Viewer URL を手組みして返す。
-     */
     public function resourceUrl(string $fromName, string $toName, \DateTimeInterface $when, bool $byArrival = true): ?string
     {
         $key = config('services.ekispert.key') ?? config('services.ekispert.api_key') ?? config('services.ekispert.access_key');
-        if (!$key) return null;
+        if (!$key) {
+            Log::warning('EKI key missing');
+            return null;
+        }
 
         $common = [
             'key'        => $key,
             'date'       => $when->format('Ymd'),
             'time'       => $when->format('Hi'),
-            // API の searchType は 'departure' / 'arrival'
             'searchType' => $byArrival ? 'arrival' : 'departure',
         ];
 
-        // 1) 駅名で検索 → ResourceURI を試す
+        // 1) 駅名でコース検索
         $res = Http::acceptJson()->get("{$this->base}/search/course/light", array_merge($common, [
-            'from' => $fromName,
-            'to'   => $toName,
+            'from' => $fromName, 'to' => $toName,
         ]));
+        Log::info('EKI course status(name)', ['status' => $res->status(), 'from' => $fromName, 'to' => $toName]);
 
         $url = data_get($res->json(), 'ResultSet.ResourceURI');
         if (is_string($url) && $url !== '') {
+            Log::info('EKI course uri(name)', ['head' => substr($url, 0, 120)]);
             return $this->normalizeUrl($url);
+        } else {
+            Log::info('EKI course body.head(name)', ['head' => substr($res->body(), 0, 300)]);
         }
 
         // 2) 駅コードに解決して再試行
         $fromCode = $this->firstStationCode($fromName, $key);
         $toCode   = $this->firstStationCode($toName, $key);
+        Log::info('EKI station picked', ['fromName'=>$fromName,'fromCode'=>$fromCode,'toName'=>$toName,'toCode'=>$toCode]);
 
         if ($fromCode && $toCode) {
             $res2 = Http::acceptJson()->get("{$this->base}/search/course/light", array_merge($common, [
-                'from' => $fromCode,
-                'to'   => $toCode,
+                'from' => $fromCode, 'to' => $toCode,
             ]));
+            Log::info('EKI course status(code)', ['status' => $res2->status(), 'fromCode' => $fromCode, 'toCode' => $toCode]);
+
             $url2 = data_get($res2->json(), 'ResultSet.ResourceURI');
             if (is_string($url2) && $url2 !== '') {
+                Log::info('EKI course uri(code)', ['head' => substr($url2, 0, 120)]);
                 return $this->normalizeUrl($url2);
+            } else {
+                Log::info('EKI course body.head(code)', ['head' => substr($res2->body(), 0, 300)]);
             }
 
-            // 3) それでもダメなら、駅コード付きで Viewer URL を手組み
-            return $this->buildViewerUrl(
-                $fromName, $fromCode,
-                $toName,   $toCode,
-                $when,     $byArrival
-            );
+            // 3) （必要なら）手組みを使う。いったん残しますが、APIで取れるならそれを優先。
+            return $this->buildViewerUrl($fromName, $fromCode, $toName, $toCode, $when, $byArrival);
         }
 
-        // 4) コードが片方でも取れないときは、名前のみで Viewer URL を手組み（成功率は下がる）
-        return $this->buildViewerUrl(
-            $fromName, null,
-            $toName,   null,
-            $when,     $byArrival
-        );
+        // 4) コード取れない場合は手組み（成功率は下がる）
+        return $this->buildViewerUrl($fromName, null, $toName, null, $when, $byArrival);
     }
 
-    /**
-     * 駅の先頭候補の station.code を返す
-     */
     private function firstStationCode(string $name, string $key): ?string
     {
         $r = Http::acceptJson()->get("{$this->base}/station/light", [
-            'key'   => $key,
-            'name'  => $name,
-            'limit' => 1,
+            'key' => $key, 'name' => $name, 'limit' => 1,
         ]);
-
-        // Point が配列/非配列どちらでも拾えるように
+        Log::info('EKI station status', ['name' => $name, 'status' => $r->status()]);
         return data_get($r->json(), 'ResultSet.Point.0.Station.code')
             ?? data_get($r->json(), 'ResultSet.Point.Station.code');
     }
 
-    /**
-     * API が返す相対/ http URL を Viewer の https に正規化
-     */
     private function normalizeUrl(string $url): string
     {
         if (str_starts_with($url, '/')) {
             $url = 'https://roote.ekispert.net' . $url;
         }
-        // .jp → .net 換装、http → https
         $url = str_replace('roote.ekispert.jp', 'roote.ekispert.net', $url);
         $url = preg_replace('#^http://#', 'https://', $url);
         return $url;
     }
+
 
     /**
      * Viewer のクエリを手組み。可能なら駅コードも併記。

@@ -5,14 +5,31 @@
   <h1 class="h4 mb-4">経路検索・交通経路申請</h1>
 
   @php
-    // Controller から渡された $prefill（セッション tr_prefill）と $viewerUrl を反映
-    $prefill = $prefill ?? (session('tr_prefill') ?? []);
-    // 上部プレビュー用 URL の決定順
-    $vu = ($viewerUrl ?? null)
-          ?? session('viewer_url')
-          ?? ($prefill['search_url'] ?? null)
-          ?? old('search_url');
-  @endphp
+  // 1) Controller からの $viewerUrl を最優先
+  $vu = $viewerUrl ?? null;
+
+  // 2) セッション
+  if ($vu === null || $vu === '') {
+      $vu = session('viewer_url');
+  }
+
+  // 3) old()（検索直後の withInput で入る）
+  if ($vu === null || $vu === '') {
+      $vu = old('search_url');
+  }
+
+  // 4) ?vu=...（URL-safe Base64）での復元（保険）
+  if (($vu === null || $vu === '') && request()->filled('vu')) {
+      $vuParam = (string)request()->query('vu');
+      $b64 = strtr($vuParam, '-_', '+/');
+      $pad = (4 - (strlen($b64) % 4)) % 4;
+      if ($pad) { $b64 .= str_repeat('=', $pad); }
+      $decoded = base64_decode($b64, false);
+      if (is_string($decoded) && $decoded !== '') {
+          $vu = $decoded;
+      }
+  }
+@endphp
 
   <div class="row g-4">
     {{-- 左：検索+申請フォーム --}}
@@ -161,8 +178,8 @@
             <div class="col-12">
               <label class="form-label small mb-1">検索結果URL（必須）</label>
               <input type="text" name="search_url" class="form-control"
-                     value="{{ old('search_url', $vu) }}"
-                     placeholder="駅すぱあと検索結果ページのURLを貼り付け">
+                      value="{{ old('search_url', $vu) }}"
+                      placeholder="駅すぱあと検索結果ページのURLを貼り付け">
               @error('search_url') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
 
