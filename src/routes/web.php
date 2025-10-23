@@ -24,7 +24,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', fn () => view('welcome'));
+Route::redirect('/', '/dashboard')->name('root');
 
 require __DIR__.'/auth.php';
 
