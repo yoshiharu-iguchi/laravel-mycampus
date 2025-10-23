@@ -56,8 +56,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width: 90px;">ID</th>
-            <th>教員氏名</th>
+            <th style="width: 90px;">教員氏名</th>
             {{-- 教員番号があるプロジェクトの場合は表示（無ければ列ごと削除OK） --}}
             @php $hasTeacherNumber = isset($teachers[0]) && isset($teachers[0]->teacher_number); @endphp
             @if($hasTeacherNumber)
@@ -70,7 +69,6 @@
         <tbody>
         @forelse($teachers as $teacher)
           <tr>
-            <td>{{ $teacher->id }}</td>
             <td>{{ $teacher->name }}</td>
             @if($hasTeacherNumber)
               <td>{{ $teacher->teacher_number }}</td>
