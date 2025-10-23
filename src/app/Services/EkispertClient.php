@@ -92,37 +92,41 @@ class EkispertClient
      *    - 到着/出発は 'type=arr|dep'（Viewer 側）
      */
     private function buildViewerUrl(
-        string $fromName, ?string $fromCode,
-        string $toName,   ?string $toCode,
-        \DateTimeInterface $when, bool $byArrival
-    ): ?string {
-        // Viewer は yyyymmdd / hour / minute を受け付ける（API の ResourceURI でも同様の形）
-        $params = [
-            'dep'        => $fromName,
-            'dep_code'   => $fromCode ?? '',
-            'arr'        => $toName,
-            'arr_code'   => $toCode ?? '',
-            'via1'       => '', 'via1_code' => '',
-            'via2'       => '', 'via2_code' => '',
-            'yyyymmdd'   => $when->format('Ymd'),
-            // hour/minute は先頭ゼロなしでも通るため int に寄せる
-            'hour'       => (int)$when->format('G'),
-            'minute'     => (int)$when->format('i'),
-            'type'       => $byArrival ? 'arr' : 'dep',
-            'sort'       => 'time',
-            'connect'        => 'true',
-            'local'          => 'true',
-            'limitedExpress' => 'true', // ← ここが 'express' ではない点が重要
-            'liner'          => 'true',
-            'shinkansen'     => 'true',
-            'highway'        => 'true',
-            'plane'          => 'true',
-            'ship'           => 'true',
-            'sleep'          => 'false',
-            'surcharge'      => '3',
-        ];
+    string $fromName, ?string $fromCode,
+    string $toName,   ?string $toCode,
+    \DateTimeInterface $when, bool $byArrival
+): ?string {
+    // ベースの必須・有効系パラメータ
+    $params = [
+        'dep'      => $fromName,
+        'arr'      => $toName,
+        'yyyymmdd' => $when->format('Ymd'),
+        'hour'     => (int)$when->format('G'),
+        'minute'   => (int)$when->format('i'),
+        'type'     => $byArrival ? 'arr' : 'dep',
+        'sort'     => 'time',
 
-        $qs = http_build_query($params);
-        return 'https://roote.ekispert.net/result?' . $qs;
-    }
+        // 列車種別など（以前動いていた実績に合わせる）
+        'connect'    => 'true',
+        'local'      => 'true',
+        'express'    => 'true',   // ← limitedExpress ではなく express を使う
+        'liner'      => 'true',
+        'shinkansen' => 'true',
+        'highway'    => 'true',
+        'plane'      => 'true',
+        'ship'       => 'true',
+        'sleep'      => 'false',
+        'surcharge'  => '3',
+    ];
+
+    // ※ ここが重要：コードが取れた時だけ付与（空文字は付けない）
+    if (!empty($fromCode)) $params['dep_code'] = $fromCode;
+    if (!empty($toCode))   $params['arr_code'] = $toCode;
+
+    // via 系も空なら一切付けない（空パラメータが 400 の原因になり得るため）
+    // もし将来経由駅を付ける場合のみ設定してください。
+
+    $qs = http_build_query($params);
+    return 'https://roote.ekispert.net/result?' . $qs;
+}
 }
