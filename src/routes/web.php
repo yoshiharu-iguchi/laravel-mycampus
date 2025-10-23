@@ -106,7 +106,7 @@ Route::get('/dashboard', function () {
     if (auth('teacher')->check())  return redirect()->route('teacher.home');
     if (auth('admin')->check())    return redirect()->route('admin.home');
     if (auth('guardian')->check()) return redirect()->route('guardian.home');
-    return redirect('/');
+    return redirect()->route('login');
 })->name('dashboard');
 
 Route::get('/profile', fn () => redirect()->route('dashboard'))->name('profile.edit');
