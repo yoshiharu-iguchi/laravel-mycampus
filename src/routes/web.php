@@ -171,7 +171,7 @@ Route::prefix('student')->as('student.')->middleware('auth:student')->group(func
     Route::get('progress', [\App\Http\Controllers\Student\ProgressController::class,'index'])->name('progress.index');
 
     // 交通費申請
-    Route::get('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class,'index'])->name('tr.index');
+    // Route::get('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class,'index'])->name('tr.index');
     Route::get('transport-requests/create', [\App\Http\Controllers\Student\TransportRequestController::class, 'create'])->name('tr.create');
     Route::post('transport-requests/search', [\App\Http\Controllers\Student\TransportRequestController::class,'search'])->name('tr.search');
     Route::post('transport-requests', [\App\Http\Controllers\Student\TransportRequestController::class, 'store'])->name('tr.store');
