@@ -65,7 +65,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width:80px;">ID</th>
+            <!-- <th style="width:80px;">ID</th> -->
             <th>学生氏名</th>
             <th>実習施設</th>
             <th>区間</th>
@@ -79,10 +79,10 @@
         <tbody>
         @forelse($requests as $it)
           <tr>
-            <td>{{ $it->id }}</td>
+            <!-- <td>{{ $it->id }}</td> -->
             <td>
               {{ $it->student?->name }}<br>
-              <span class="text-muted small">ID: {{ $it->student_id }}</span>
+              <!-- <span class="text-muted small">ID: {{ $it->student_id }}</span> -->
             </td>
             <td>{{ $it->facility?->name }}</td>
             <td>
